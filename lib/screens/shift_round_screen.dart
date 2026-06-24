@@ -4,6 +4,7 @@ import '../models/icu_unit.dart';
 import '../models/selected_bed.dart';
 import '../services/evolution_generator.dart';
 import '../services/shift_round_store.dart';
+import '../services/supabase_sync_service.dart';
 import '../widgets/medical_disclaimer.dart';
 import 'evolution_form_screen.dart';
 import 'evolution_preview_screen.dart';
@@ -19,6 +20,8 @@ class ShiftRoundScreen extends StatefulWidget {
 }
 
 class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
+  bool _syncing = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +47,16 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
         title: Text(widget.unit.name),
         actions: [
           IconButton(
+            tooltip: 'Sincronizar',
+            onPressed: _syncing ? null : _syncNow,
+            icon: _syncing
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_sync_outlined),
+          ),
+          IconButton(
             tooltip: 'Limpar ala',
             onPressed: _clearUnit,
             icon: const Icon(Icons.delete_outline),
@@ -68,12 +81,20 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                       ),
                     ),
                     OutlinedButton.icon(
+                      onPressed: _syncing ? null : _syncNow,
+                      icon: const Icon(Icons.cloud_sync_outlined),
+                      label: Text(_syncing ? 'Sincronizando' : 'Sincronizar'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
                       onPressed: _clearUnit,
                       icon: const Icon(Icons.delete_outline),
                       label: const Text('Limpar ala'),
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                _syncStatusCard(),
                 const SizedBox(height: 12),
                 ...widget.store.beds.map(_bedCard),
               ],
@@ -151,6 +172,61 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
         onConfirmed: () => widget.store.markCompleted(selected.bed.id),
       ),
     ));
+  }
+
+  Widget _syncStatusCard() {
+    final sync = SupabaseSyncService.instance;
+    final email = sync.userEmail;
+    final text = sync.canSync
+        ? 'Sincronizacao ativa: $email'
+        : 'Sincronizacao inativa. Entre na mesma conta no celular e no computador.';
+    return Card(
+      color: sync.canSync
+          ? Theme.of(context)
+              .colorScheme
+              .primaryContainer
+              .withValues(alpha: .35)
+          : Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Icon(sync.canSync
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_off_outlined),
+            const SizedBox(width: 8),
+            Expanded(child: Text(text)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _syncNow() async {
+    final sync = SupabaseSyncService.instance;
+    if (!sync.canSync) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Entre na mesma conta no celular e no computador.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _syncing = true);
+    try {
+      final count = await widget.store.syncFromRemote(widget.unit.beds);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sincronizacao concluida ($count registros).')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Falha ao sincronizar: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
   }
 
   Future<void> _clearUnit() async {

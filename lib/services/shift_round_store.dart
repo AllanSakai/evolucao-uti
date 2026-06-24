@@ -15,6 +15,7 @@ abstract interface class ShiftRoundStore extends ChangeNotifier {
   SelectedBed getById(String bedId);
   void saveDraft(String bedId, EvolutionData data);
   void markCompleted(String bedId);
+  Future<int> syncFromRemote(List<Bed> unitBeds);
   Future<void> clear();
 }
 
@@ -54,6 +55,9 @@ class InMemoryShiftRoundStore extends ChangeNotifier
     selected.status = BedProgressStatus.completed;
     notifyListeners();
   }
+
+  @override
+  Future<int> syncFromRemote(List<Bed> unitBeds) async => 0;
 
   @override
   Future<void> clear() async {
@@ -110,9 +114,18 @@ class PersistentShiftRoundStore extends ChangeNotifier
     notifyListeners();
   }
 
-  Future<void> syncFromRemote(List<Bed> unitBeds) async {
+  @override
+  Future<int> syncFromRemote(List<Bed> unitBeds) async {
+    for (final selected in _beds.values) {
+      if (selected.evolutionData == null) continue;
+      await _sync.upsertBed(
+        bed: selected.bed,
+        status: selected.status,
+        evolutionData: selected.evolutionData,
+      );
+    }
     final remoteBeds = await _sync.fetchUnit(unitCode);
-    if (remoteBeds.isEmpty) return;
+    if (remoteBeds.isEmpty) return 0;
     final bedsById = {for (final bed in unitBeds) bed.id: bed};
     for (final remote in remoteBeds) {
       final bed = bedsById[remote.bedId];
@@ -125,6 +138,7 @@ class PersistentShiftRoundStore extends ChangeNotifier
     }
     _persist();
     notifyListeners();
+    return remoteBeds.length;
   }
 
   @override
@@ -138,11 +152,13 @@ class PersistentShiftRoundStore extends ChangeNotifier
       selected.status = BedProgressStatus.inProgress;
     }
     _persist();
-    unawaited(_sync.upsertBed(
-      bed: selected.bed,
-      status: selected.status,
-      evolutionData: selected.evolutionData,
-    ));
+    unawaited(_sync
+        .upsertBed(
+          bed: selected.bed,
+          status: selected.status,
+          evolutionData: selected.evolutionData,
+        )
+        .catchError((error) => debugPrint('Falha ao sincronizar: $error')));
     notifyListeners();
   }
 
@@ -152,11 +168,13 @@ class PersistentShiftRoundStore extends ChangeNotifier
     if (selected.evolutionData == null) return;
     selected.status = BedProgressStatus.completed;
     _persist();
-    unawaited(_sync.upsertBed(
-      bed: selected.bed,
-      status: selected.status,
-      evolutionData: selected.evolutionData,
-    ));
+    unawaited(_sync
+        .upsertBed(
+          bed: selected.bed,
+          status: selected.status,
+          evolutionData: selected.evolutionData,
+        )
+        .catchError((error) => debugPrint('Falha ao sincronizar: $error')));
     notifyListeners();
   }
 
