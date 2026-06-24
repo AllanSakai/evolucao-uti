@@ -14,10 +14,10 @@ class IcuUnitSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EvolucaoUTI'),
+        title: const Text('EvoluçãoUTI'),
         actions: [
           IconButton(
-            tooltip: 'Conta e sincronizacao',
+            tooltip: 'Conta e sincronização',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AccountScreen()),
             ),
@@ -34,7 +34,7 @@ class IcuUnitSelectionScreen extends StatelessWidget {
               children: [
                 const MedicalDisclaimer(),
                 const SizedBox(height: 20),
-                Text('Selecione a UTI do plantao',
+                Text('Selecione a UTI do plantão',
                     style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 16),
                 GridView.builder(

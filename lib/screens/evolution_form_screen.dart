@@ -270,7 +270,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     ),
                   ],
                 ]),
-                FormSection(title: 'Sinais e respiratorio', children: [
+                FormSection(title: 'Sinais e respiratório', children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -322,17 +322,17 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                   ),
                   if (_support == VentilatorySupport.cateterNasal ||
                       _support == VentilatorySupport.mascara) ...[
-                    _text('oxygenFlow', 'Vazao O2 atual (L/min)', number: true),
+                    _text('oxygenFlow', 'Vazão O2 atual (L/min)', number: true),
                     if (_support == VentilatorySupport.cateterNasal) ...[
                       _chips<bool>(
                         title: 'O2 domiciliar?',
                         values: const [false, true],
                         selected: _usesHomeOxygen,
-                        labelOf: (v) => v ? 'Sim' : 'Nao',
+                        labelOf: (v) => v ? 'Sim' : 'Não',
                         onChanged: (v) => _update(() => _usesHomeOxygen = v),
                       ),
                       if (_usesHomeOxygen)
-                        _text('homeOxygenFlow', 'Vazao em casa (L/min)',
+                        _text('homeOxygenFlow', 'Vazão em casa (L/min)',
                             number: true),
                     ],
                   ],
@@ -351,22 +351,22 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       title: 'Sincronia com VM',
                       values: const [true, false],
                       selected: _vmSynchrony,
-                      labelOf: (v) => v ? 'Sincronico' : 'Assincronico',
+                      labelOf: (v) => v ? 'Sincrônico' : 'Assincrônico',
                       onChanged: (v) => _update(() => _vmSynchrony = v),
                     ),
                   ],
                 ]),
-                FormSection(title: 'Hemodinamica', children: [
+                FormSection(title: 'Hemodinâmica', children: [
                   _chips<HemodynamicState>(
                     title: 'Estado',
                     values: HemodynamicState.values,
                     selected: _hemodynamic,
                     labelOf: (v) =>
-                        v == HemodynamicState.estavel ? 'Estavel' : 'Instavel',
+                        v == HemodynamicState.estavel ? 'Estável' : 'Instável',
                     onChanged: (v) => _update(() => _hemodynamic = v),
                   ),
                   _chips<BloodPressureState>(
-                    title: 'Pressao',
+                    title: 'Pressão',
                     values: BloodPressureState.values,
                     selected: _bloodPressureState,
                     labelOf: (v) => switch (v) {
@@ -392,8 +392,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       selected: _selectedVasoactiveDrugs,
                       controllers: _vasoactiveRates,
                     ),
-                  _text('bic', 'BIC / infusoes continuas',
-                      hint: 'Ex.: SG 5%, ATB, sedacao...'),
+                  _text('bic', 'BIC / infusões contínuas',
+                      hint: 'Ex.: SG 5%, ATB, sedação...'),
                 ]),
                 FormSection(title: 'Dieta e GI', children: [
                   _chips<DietRoute>(
@@ -411,12 +411,12 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                   ),
                   Wrap(spacing: 8, runSpacing: 8, children: [
                     FilterChip(
-                      label: const Text('Nauseas'),
+                      label: const Text('Náuseas'),
                       selected: _nausea,
                       onSelected: (v) => _update(() => _nausea = v),
                     ),
                     FilterChip(
-                      label: const Text('Vomitos'),
+                      label: const Text('Vômitos'),
                       selected: _vomiting,
                       onSelected: (v) => _update(() => _vomiting = v),
                     ),
@@ -427,9 +427,9 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     ),
                   ]),
                 ]),
-                FormSection(title: 'Diurese, BH e evacuacao', children: [
+                FormSection(title: 'Diurese, BH e evacuação', children: [
                   _chips<String>(
-                    title: 'Periodo da diurese e BH',
+                    title: 'Período da diurese e BH',
                     values: const ['12H', '18H'],
                     selected: _period,
                     labelOf: (v) => v,
@@ -440,7 +440,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     values: DiuresisType.values,
                     selected: _diuresis,
                     labelOf: (v) => switch (v) {
-                      DiuresisType.espontanea => 'Espontanea',
+                      DiuresisType.espontanea => 'Espontânea',
                       DiuresisType.svd => 'SVD',
                       DiuresisType.ausente => 'Ausente',
                     },
@@ -454,7 +454,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     ),
                   _text('balance', 'BH', hint: '+450', number: true),
                   _chips<BowelMovement>(
-                    title: 'Evacuacao',
+                    title: 'Evacuação',
                     values: BowelMovement.values,
                     selected: _bowel,
                     labelOf: (v) => switch (v) {
@@ -465,7 +465,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     onChanged: (v) => _update(() => _bowel = v),
                   ),
                   _chips<StoolPathologicalProducts>(
-                    title: 'Produtos patologicos',
+                    title: 'Produtos patológicos',
                     values: StoolPathologicalProducts.values,
                     selected: _stoolProducts,
                     labelOf: (v) => v == StoolPathologicalProducts.ausentes
@@ -477,16 +477,16 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     _text('stoolDescription', 'Descrever',
                         hint: 'Sangue, muco, melena...'),
                 ]),
-                FormSection(title: 'Avaliacao pulmonar', children: [
+                FormSection(title: 'Avaliação pulmonar', children: [
                   _lungSide(
-                    title: 'Pulmao direito',
+                    title: 'Pulmão direito',
                     mvPresent: _rightMvPresent,
                     findings: _rightPulmonaryFindings,
                     locations: _rightPulmonaryLocations,
                     onMvChanged: (v) => _update(() => _rightMvPresent = v),
                   ),
                   _lungSide(
-                    title: 'Pulmao esquerdo',
+                    title: 'Pulmão esquerdo',
                     mvPresent: _leftMvPresent,
                     findings: _leftPulmonaryFindings,
                     locations: _leftPulmonaryLocations,
@@ -502,7 +502,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     onChanged: (v) => _update(() => _colorStatus = v),
                   ),
                   _chips<String>(
-                    title: 'Hidratacao',
+                    title: 'Hidratação',
                     values: const ['HIDRATADO', 'DESIDRATADO'],
                     selected: _hydrationStatus,
                     labelOf: _generalLabel,
@@ -516,14 +516,14 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     onChanged: (v) => _update(() => _cyanosisStatus = v),
                   ),
                   _chips<String>(
-                    title: 'Ictericia',
+                    title: 'Icterícia',
                     values: const ['ANICTERICO', 'ICTERICO'],
                     selected: _jaundiceStatus,
                     labelOf: _generalLabel,
                     onChanged: (v) => _update(() => _jaundiceStatus = v),
                   ),
                   _chips<String>(
-                    title: 'Padrao respiratorio clinico',
+                    title: 'Padrão respiratório clínico',
                     values: const ['EUPNEICO', 'DISPNEICO'],
                     selected: _respiratoryEffort,
                     labelOf: _generalLabel,
@@ -583,7 +583,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     ],
                     selected: _pulses,
                     labelOf: (v) => v == 'PULSOS PERIFERICOS PALPAVEIS'
-                        ? 'Pulsos palpaveis'
+                        ? 'Pulsos palpáveis'
                         : 'Pulsos reduzidos',
                     onChanged: (v) => _update(() => _pulses = v),
                   ),
@@ -614,14 +614,14 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     onChanged: (v) => _update(() => _abdomenShape = v),
                   ),
                   _chips<String>(
-                    title: 'Consistencia',
+                    title: 'Consistência',
                     values: const ['FLACIDO', 'TENSO', 'RIGIDO'],
                     selected: _abdomenConsistency,
                     labelOf: _generalLabel,
                     onChanged: (v) => _update(() => _abdomenConsistency = v),
                   ),
                   _chips<String>(
-                    title: 'Ruidos hidroaereos',
+                    title: 'Ruídos hidroaéreos',
                     values: const [
                       'RH+',
                       'RH DIMINUIDOS',
@@ -681,13 +681,13 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                   FilledButton.tonalIcon(
                     onPressed: _applyNormalNeurological,
                     icon: const Icon(Icons.psychology_alt_outlined),
-                    label: const Text('Neurologico normal'),
+                    label: const Text('Neurológico normal'),
                   ),
                   _chips<bool>(
-                    title: 'Sedacao',
+                    title: 'Sedação',
                     values: const [false, true],
                     selected: _neurological == NeurologicalState.sedado,
-                    labelOf: (v) => v ? 'Sim' : 'Nao',
+                    labelOf: (v) => v ? 'Sim' : 'Não',
                     onChanged: (v) => _update(() {
                       _neurological = v
                           ? NeurologicalState.sedado
@@ -724,25 +724,25 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       title: 'Mobilidade preservada',
                       values: const [true, false],
                       selected: _mobilityPreserved,
-                      labelOf: (v) => v ? 'Sim' : 'Nao',
+                      labelOf: (v) => v ? 'Sim' : 'Não',
                       onChanged: (v) => _update(() => _mobilityPreserved = v),
                     ),
                     _chips<bool>(
-                      title: 'Forca preservada em 4 membros',
+                      title: 'Força preservada em 4 membros',
                       values: const [true, false],
                       selected: _strengthPreserved,
-                      labelOf: (v) => v ? 'Sim' : 'Nao',
+                      labelOf: (v) => v ? 'Sim' : 'Não',
                       onChanged: (v) => _update(() => _strengthPreserved = v),
                     ),
                     if (!_mobilityPreserved || !_strengthPreserved)
-                      _text('neuroDeficit', 'Paresia/plegia ou deficit motor',
+                      _text('neuroDeficit', 'Paresia/plegia ou déficit motor',
                           hint: 'Ex.: hemiparesia direita, plegia em MIE...'),
                   ],
                   _chips<bool>(
                     title: 'PIFR',
                     values: const [true, false],
                     selected: _pifr,
-                    labelOf: (v) => v ? 'Sim' : 'Nao',
+                    labelOf: (v) => v ? 'Sim' : 'Não',
                     onChanged: (v) => _update(() => _pifr = v),
                   ),
                 ]),
@@ -760,12 +760,12 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       onSelected: (v) => _update(() => _lowerLimbPitting = v),
                     ),
                     FilterChip(
-                      label: const Text('Lesao'),
+                      label: const Text('Lesão'),
                       selected: _lowerLimbLesion,
                       onSelected: (v) => _update(() => _lowerLimbLesion = v),
                     ),
                     FilterChip(
-                      label: const Text('Amputacao'),
+                      label: const Text('Amputação'),
                       selected: _lowerLimbAmputation,
                       onSelected: (v) =>
                           _update(() => _lowerLimbAmputation = v),
@@ -780,14 +780,14 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     ),
                   if (_lowerLimbEdema) ...[
                     _chips<String>(
-                      title: 'Graduacao do edema MMII',
+                      title: 'Graduação do edema MMII',
                       values: const ['+/4+', '++/4+', '+++/4+', '++++/4+'],
                       selected: _lowerLimbEdemaGrade,
                       labelOf: (v) => v,
                       onChanged: (v) => _update(() => _lowerLimbEdemaGrade = v),
                     ),
                     _multiChips<String>(
-                      title: 'Localizacao do edema MMII',
+                      title: 'Localização do edema MMII',
                       values: const ['MID', 'MIE'],
                       selected: _lowerLimbSides,
                       labelOf: (v) => v,
@@ -803,7 +803,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                   ),
                   if (_upperLimbEdema)
                     _chips<String>(
-                      title: 'Graduacao do edema MMSS',
+                      title: 'Graduação do edema MMSS',
                       values: const ['+/4+', '++/4+', '+++/4+', '++++/4+'],
                       selected: _upperLimbEdemaGrade,
                       labelOf: (v) => v,
@@ -840,12 +840,12 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
           FilledButton.tonalIcon(
             onPressed: () => _applyPreset(mechanicalVentilation: false),
             icon: const Icon(Icons.air),
-            label: const Text('Padrao acordado'),
+            label: const Text('Padrão acordado'),
           ),
           FilledButton.tonalIcon(
             onPressed: () => _applyPreset(mechanicalVentilation: true),
             icon: const Icon(Icons.monitor_heart_outlined),
-            label: const Text('Padrao IOT/VM'),
+            label: const Text('Padrão IOT/VM'),
           ),
         ],
       );
@@ -915,13 +915,13 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
           ),
           if (findings.isNotEmpty)
             _multiChips<String>(
-              title: 'Localizacao dos achados',
+              title: 'Localização dos achados',
               values: const ['BASE', 'CAMPO MEDIO', 'APICE'],
               selected: locations,
               labelOf: (v) => switch (v) {
                 'BASE' => 'Base',
-                'CAMPO MEDIO' => 'Campo medio',
-                'APICE' => 'Apice',
+                'CAMPO MEDIO' => 'Campo médio',
+                'APICE' => 'Ápice',
                 _ => v,
               },
             ),
@@ -1080,43 +1080,43 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   String _supportLabel(VentilatorySupport support) => switch (support) {
         VentilatorySupport.arAmbiente => 'AA',
         VentilatorySupport.cateterNasal => 'CN',
-        VentilatorySupport.mascara => 'Mascara',
+        VentilatorySupport.mascara => 'Máscara',
         VentilatorySupport.vni => 'VNI',
         VentilatorySupport.iotVm => 'IOT+VM',
         VentilatorySupport.tqtVm => 'TQT+VM',
       };
 
   String _generalLabel(String value) => value
-      .replaceAll('ACIANOTICO', 'Acianotico')
-      .replaceAll('ANICTERICO', 'Anicterico')
+      .replaceAll('ACIANOTICO', 'Acianótico')
+      .replaceAll('ANICTERICO', 'Anictérico')
       .replaceAll('HIPOCORADO', 'Hipocorado')
       .replaceAll('DESCORADO', 'Descorado')
       .replaceAll('CORADO', 'Corado')
       .replaceAll('HIDRATADO', 'Hidratado')
       .replaceAll('DESIDRATADO', 'Desidratado')
-      .replaceAll('CIANOTICO', 'Cianotico')
-      .replaceAll('ICTERICO', 'Icterico')
+      .replaceAll('CIANOTICO', 'Cianótico')
+      .replaceAll('ICTERICO', 'Ictérico')
       .replaceAll('EUPNEICO', 'Eupneico')
       .replaceAll('DISPNEICO', 'Dispneico')
       .replaceAll('RITMO IRREGULAR', 'Ritmo irregular')
       .replaceAll('SEM SOPROS', 'Sem sopros')
-      .replaceAll('SOPRO SISTOLICO', 'Sopro sistolico')
-      .replaceAll('SOPRO DIASTOLICO', 'Sopro diastolico')
+      .replaceAll('SOPRO SISTOLICO', 'Sopro sistólico')
+      .replaceAll('SOPRO DIASTOLICO', 'Sopro diastólico')
       .replaceAll('PLANO', 'Plano')
       .replaceAll('GLOBOSO', 'Globoso')
       .replaceAll('DISTENDIDO', 'Distendido')
       .replaceAll('ESCAVADO', 'Escavado')
-      .replaceAll('FLACIDO', 'Flacido')
+      .replaceAll('FLACIDO', 'Flácido')
       .replaceAll('TENSO', 'Tenso')
-      .replaceAll('RIGIDO', 'Rigido')
+      .replaceAll('RIGIDO', 'Rígido')
       .replaceAll('DIMINUIDOS', 'Diminuídos')
       .replaceAll('AUSENTES', 'Ausentes')
       .replaceAll('AUMENTADOS', 'Aumentados')
       .replaceAll('INDOLOR', 'Indolor')
       .replaceAll('DOLOROSO', 'Doloroso')
       .replaceAll('DIFUSA', 'Difusa')
-      .replaceAll('EPIGASTRIO', 'Epigastrio')
-      .replaceAll('HIPOGASTRIO', 'Hipogastrio')
+      .replaceAll('EPIGASTRIO', 'Epigástrio')
+      .replaceAll('HIPOGASTRIO', 'Hipogástrio')
       .replaceAll('ASCITE', 'Ascite')
       .replaceAll('OSTOMIA', 'Ostomia')
       .replaceAll('DRENO ABDOMINAL', 'Dreno abdominal');
@@ -1196,10 +1196,10 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     }
     if (_lowerLimbPitting) values.add('COM EMPASTAMENTO');
     if (_lowerLimbLesion) {
-      values.add('COM LESAO${_lowerLimbSidesText()}');
+      values.add('COM LESÃO${_lowerLimbSidesText()}');
     }
     if (_lowerLimbAmputation) {
-      values.add('COM AMPUTACAO${_lowerLimbSidesText()}');
+      values.add('COM AMPUTAÇÃO${_lowerLimbSidesText()}');
     }
     return values.isEmpty ? null : values.join(', ');
   }
@@ -1211,23 +1211,20 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       ? 'COM EDEMA${_upperLimbEdemaGrade == null ? '' : ' $_upperLimbEdemaGrade'}'
       : 'SEM EDEMA';
 
-  String _sexAware(String masculine) {
-    if (_sex == Sex.masculino) return masculine;
-    return switch (masculine) {
-      'CORADO' => 'CORADA',
-      'HIPOCORADO' => 'HIPOCORADA',
-      'DESCORADO' => 'DESCORADA',
-      'HIDRATADO' => 'HIDRATADA',
-      'DESIDRATADO' => 'DESIDRATADA',
-      'ACIANOTICO' => 'ACIANOTICA',
-      'CIANOTICO' => 'CIANOTICA',
-      'ANICTERICO' => 'ANICTERICA',
-      'ICTERICO' => 'ICTERICA',
-      'EUPNEICO' => 'EUPNEICA',
-      'DISPNEICO' => 'DISPNEICA',
-      _ => masculine,
-    };
-  }
+  String _sexAware(String masculine) => switch (masculine) {
+        'CORADO' => _sex == Sex.masculino ? 'CORADO' : 'CORADA',
+        'HIPOCORADO' => _sex == Sex.masculino ? 'HIPOCORADO' : 'HIPOCORADA',
+        'DESCORADO' => _sex == Sex.masculino ? 'DESCORADO' : 'DESCORADA',
+        'HIDRATADO' => _sex == Sex.masculino ? 'HIDRATADO' : 'HIDRATADA',
+        'DESIDRATADO' => _sex == Sex.masculino ? 'DESIDRATADO' : 'DESIDRATADA',
+        'ACIANOTICO' => _sex == Sex.masculino ? 'ACIANÓTICO' : 'ACIANÓTICA',
+        'CIANOTICO' => _sex == Sex.masculino ? 'CIANÓTICO' : 'CIANÓTICA',
+        'ANICTERICO' => _sex == Sex.masculino ? 'ANICTÉRICO' : 'ANICTÉRICA',
+        'ICTERICO' => _sex == Sex.masculino ? 'ICTÉRICO' : 'ICTÉRICA',
+        'EUPNEICO' => _sex == Sex.masculino ? 'EUPNEICO' : 'EUPNEICA',
+        'DISPNEICO' => _sex == Sex.masculino ? 'DISPNEICO' : 'DISPNEICA',
+        _ => masculine,
+      };
 
   String _generalConditionExam() => [
         _generalState,
@@ -1240,7 +1237,11 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
 
   String _cardiovascularExam() => [
         _heartRhythm,
-        _murmur == 'SEM SOPROS' ? 'SS' : _murmur,
+        _murmur == 'SEM SOPROS'
+            ? 'SS'
+            : _murmur
+                .replaceAll('SISTOLICO', 'SISTÓLICO')
+                .replaceAll('DIASTOLICO', 'DIASTÓLICO'),
         _heartSounds,
         _capillaryRefill,
         _pulses,
@@ -1249,8 +1250,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
 
   String _abdominalExam() {
     final pain = _abdominalPain == 'INDOLOR'
-        ? 'INDOLOR A PALPACAO'
-        : 'DOLOROSO A PALPACAO${_abdominalPainLocations.isEmpty ? '' : ' EM ${_abdominalPainLocations.join(' E ')}'}';
+        ? 'INDOLOR À PALPAÇÃO'
+        : 'DOLOROSO À PALPAÇÃO${_abdominalPainLocations.isEmpty ? '' : ' EM ${_abdominalPainLocations.join(' E ')}'}';
     final findings = [
       _abdomenShape,
       _abdomenConsistency,
@@ -1267,7 +1268,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     if (_neurological == NeurologicalState.sedado || _isDeepSedation) {
       final rass = _value('rass') ?? '-5';
       final prefix =
-          _neurological == NeurologicalState.sedado ? 'SOB SEDACAO, ' : '';
+          _neurological == NeurologicalState.sedado ? 'SOB SEDAÇÃO, ' : '';
       return '${prefix}RASS $rass, $pifrText';
     }
 
@@ -1277,14 +1278,14 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     ];
     final deficit = _value('neuroDeficit');
     if (_mobilityPreserved && _strengthPreserved) {
-      findings.add('MOBILIDADE E FORCA DE 4 MEMBROS PRESERVADA');
+      findings.add('MOBILIDADE E FORÇA DE 4 MEMBROS PRESERVADA');
     } else if (deficit != null) {
       findings.add(deficit.toUpperCase());
     } else {
       final altered = <String>[];
-      if (!_mobilityPreserved) altered.add('MOBILIDADE NAO PRESERVADA');
+      if (!_mobilityPreserved) altered.add('MOBILIDADE NÃO PRESERVADA');
       if (!_strengthPreserved) {
-        altered.add('FORCA DE 4 MEMBROS NAO PRESERVADA');
+        altered.add('FORÇA DE 4 MEMBROS NÃO PRESERVADA');
       }
       findings.add(altered.join(', '));
     }

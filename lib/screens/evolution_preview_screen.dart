@@ -72,7 +72,7 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
                       maxLines: null,
                       decoration: InputDecoration(
                         labelText:
-                            _editing ? 'Edicao manual' : 'Resumo para GPT',
+                            _editing ? 'Edição manual' : 'Resumo para GPT',
                         border: _editing
                             ? const OutlineInputBorder()
                             : InputBorder.none,
@@ -94,7 +94,7 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
                       onPressed: () => setState(() => _editing = !_editing),
                       icon: Icon(_editing ? Icons.check : Icons.edit_outlined),
                       label: Text(
-                          _editing ? 'Concluir edicao' : 'Editar manualmente'),
+                          _editing ? 'Concluir edição' : 'Editar manualmente'),
                     ),
                     FilledButton.icon(
                       onPressed: _confirmed ? null : _confirmEvolution,
@@ -125,7 +125,7 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
     widget.onConfirmed?.call();
     setState(() => _confirmed = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Leito marcado como concluido.')),
+      const SnackBar(content: Text('Leito marcado como concluído.')),
     );
   }
 }

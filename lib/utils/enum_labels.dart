@@ -17,7 +17,7 @@ extension VentilatorySupportLabel on VentilatorySupport {
   String get label => switch (this) {
         VentilatorySupport.arAmbiente => 'Ar ambiente',
         VentilatorySupport.cateterNasal => 'Cateter nasal',
-        VentilatorySupport.mascara => 'Mascara',
+        VentilatorySupport.mascara => 'Máscara',
         VentilatorySupport.vni => 'VNI',
         VentilatorySupport.iotVm => 'IOT + VM',
         VentilatorySupport.tqtVm => 'TQT + VM',

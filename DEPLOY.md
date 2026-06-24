@@ -1,14 +1,14 @@
-# Publicar o EvolucaoUTI
+# Publicar o EvoluçãoUTI
 
-Este projeto esta preparado para publicar o Flutter Web no GitHub Pages e sincronizar os dados pelo Supabase.
+Este projeto está preparado para publicar o Flutter Web no GitHub Pages e sincronizar os dados pelo Supabase.
 
-## 1. Criar o repositorio no GitHub
+## 1. Criar o repositório no GitHub
 
 1. Acesse https://github.com/new
 2. Nome sugerido: `evolucao-uti`
-3. Pode ser privado ou publico.
-4. Nao marque para criar README, `.gitignore` ou license, porque o projeto ja tem esses arquivos.
-5. Crie o repositorio.
+3. Pode ser privado ou público.
+4. Não marque para criar README, `.gitignore` ou license, porque o projeto já tem esses arquivos.
+5. Crie o repositório.
 
 ## 2. Enviar o projeto
 
@@ -22,7 +22,7 @@ git push -u origin main
 
 ## 3. Configurar secrets do Supabase no GitHub
 
-No repositorio GitHub:
+No repositório GitHub:
 
 1. Settings
 2. Secrets and variables
@@ -43,7 +43,7 @@ Use os valores do Supabase:
 
 ## 4. Ativar GitHub Pages
 
-No repositorio GitHub:
+No repositório GitHub:
 
 1. Settings
 2. Pages
@@ -64,7 +64,7 @@ No Supabase:
 https://SEU_USUARIO.github.io/evolucao-uti/
 ```
 
-4. Em Redirect URLs, adicione tambem:
+4. Em Redirect URLs, adicione também:
 
 ```text
 http://127.0.0.1:53123/
@@ -72,14 +72,14 @@ http://localhost:53123/
 https://SEU_USUARIO.github.io/evolucao-uti/
 ```
 
-Se o link de confirmacao de e-mail abrir uma pagina 404 do GitHub, confira se o
-`Site URL` e o Redirect URL principal estao exatamente com o caminho do projeto:
+Se o link de confirmação de e-mail abrir uma página 404 do GitHub, confira se o
+`Site URL` e o Redirect URL principal estão exatamente com o caminho do projeto:
 
 ```text
 https://SEU_USUARIO.github.io/evolucao-uti/
 ```
 
-O `/evolucao-uti/` no final e obrigatorio para GitHub Pages de repositorio.
+O `/evolucao-uti/` no final é obrigatório para GitHub Pages de repositório.
 
 ## 6. Usar no celular
 
@@ -87,5 +87,5 @@ Abra a URL do GitHub Pages no Safari/Chrome do celular, entre na sua conta e use
 
 Se quiser instalar como atalho:
 
-- iPhone/Safari: compartilhar -> Adicionar a Tela de Inicio
-- Android/Chrome: menu -> Adicionar a tela inicial
+- iPhone/Safari: compartilhar -> Adicionar à Tela de Início
+- Android/Chrome: menu -> Adicionar à tela inicial

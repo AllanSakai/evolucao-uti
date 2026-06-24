@@ -27,7 +27,7 @@ class _AccountScreenState extends State<AccountScreen> {
     final hasKeys = SupabaseConfig.hasKeys;
     final user = SupabaseConfig.client?.auth.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('Conta e sincronizacao')),
+      appBar: AppBar(title: const Text('Conta e sincronização')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -45,17 +45,17 @@ class _AccountScreenState extends State<AccountScreen> {
                           configured
                               ? 'Supabase configurado'
                               : hasKeys
-                                  ? 'Supabase com erro de inicializacao'
-                                  : 'Supabase ainda nao configurado',
+                                  ? 'Supabase com erro de inicialização'
+                                  : 'Supabase ainda não configurado',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           configured
-                              ? 'Ao entrar, seus preenchimentos serao sincronizados entre celular e computador.'
+                              ? 'Ao entrar, seus preenchimentos serão sincronizados entre celular e computador.'
                               : hasKeys
-                                  ? 'As chaves foram recebidas, mas o Supabase nao iniciou. Confira as secrets e publique novamente.'
-                                  : 'O app continua funcionando localmente. Depois que voce criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
+                                  ? 'As chaves foram recebidas, mas o Supabase não iniciou. Confira as secrets e publique novamente.'
+                                  : 'O app continua funcionando localmente. Depois que você criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
                         ),
                       ],
                     ),
@@ -124,7 +124,7 @@ class _AccountScreenState extends State<AccountScreen> {
         password: _password.text,
         emailRedirectTo: _emailRedirectUrl(),
       );
-    }, 'Conta criada. Se o Supabase pedir confirmacao, confirme pelo e-mail.');
+    }, 'Conta criada. Se o Supabase pedir confirmação, confirme pelo e-mail.');
   }
 
   String _emailRedirectUrl() {
@@ -199,7 +199,7 @@ class _SetupHelp extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Text(
-          'Depois que criarmos o projeto no Supabase, voce vai copiar a Project URL e a anon public key. Eu deixei o app pronto para receber essas duas informacoes por dart-define.',
+          'Depois que criarmos o projeto no Supabase, você vai copiar a Project URL e a anon public key. Eu deixei o app pronto para receber essas duas informações por dart-define.',
         ),
       ),
     );

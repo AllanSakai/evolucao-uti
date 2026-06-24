@@ -1,6 +1,6 @@
-# EvolucaoUTI
+# EvoluçãoUTI
 
-Aplicativo Flutter para coletar dados estruturados de visita/evolucao em UTI e gerar um resumo em caixa alta para copiar e usar no GPT.
+Aplicativo Flutter para coletar dados estruturados de visita/evolução em UTI e gerar um resumo em caixa alta para copiar e usar no GPT.
 
 ## Executar
 
@@ -14,11 +14,11 @@ flutter run
 1. Selecione a UTI.
 2. Preencha os dados do leito durante a visita.
 3. Gere o resumo estruturado.
-4. Copie o resumo e cole no GPT para redigir a evolucao final.
+4. Copie o resumo e cole no GPT para redigir a evolução final.
 
-## Sincronizacao com Supabase
+## Sincronização com Supabase
 
-A sincronizacao e opcional. Sem Supabase, o app continua salvando localmente no aparelho.
+A sincronização é opcional. Sem Supabase, o app continua salvando localmente no aparelho.
 
 ### 1. Criar projeto
 
@@ -32,7 +32,7 @@ A sincronizacao e opcional. Sem Supabase, o app continua salvando localmente no 
 
 1. No menu lateral do Supabase, abra SQL Editor.
 2. Clique em New query.
-3. Cole o conteudo de `supabase/schema.sql`.
+3. Cole o conteúdo de `supabase/schema.sql`.
 4. Clique em Run.
 
 ### 3. Pegar as chaves
@@ -43,17 +43,17 @@ A sincronizacao e opcional. Sem Supabase, o app continua salvando localmente no 
    - Project URL
    - anon public key
 
-### 4. Rodar o app com sincronizacao
+### 4. Rodar o app com sincronização
 
 ```bash
 flutter run -d chrome --dart-define=SUPABASE_URL=SUA_PROJECT_URL --dart-define=SUPABASE_ANON_KEY=SUA_ANON_PUBLIC_KEY
 ```
 
-Depois abra o botao de conta no canto superior direito do app, crie sua conta e faca login.
+Depois abra o botão de conta no canto superior direito do app, crie sua conta e faça login.
 
-### Observacao de privacidade
+### Observação de privacidade
 
-Evite salvar nome, prontuario, data de nascimento ou qualquer dado que identifique o paciente. Use apenas UTI/leito e dados clinicos sem identificacao.
+Evite salvar nome, prontuário, data de nascimento ou qualquer dado que identifique o paciente. Use apenas UTI/leito e dados clínicos sem identificação.
 
 ## Testes
 

@@ -25,7 +25,7 @@ class EvolucaoUtiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EvolucaoUTI',
+      title: 'EvoluçãoUTI',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

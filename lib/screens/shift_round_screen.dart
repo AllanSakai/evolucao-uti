@@ -58,7 +58,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                 : const Icon(Icons.cloud_sync_outlined),
           ),
           IconButton(
-            tooltip: 'Conta e sincronizacao',
+            tooltip: 'Conta e sincronização',
             onPressed: _openAccount,
             icon: const Icon(Icons.account_circle_outlined),
           ),
@@ -82,7 +82,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        '$completed de ${widget.store.beds.length} concluidos',
+                        '$completed de ${widget.store.beds.length} concluídos',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -184,8 +184,8 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
     final sync = SupabaseSyncService.instance;
     final email = sync.userEmail;
     final text = sync.canSync
-        ? 'Sincronizacao ativa: $email'
-        : 'Sincronizacao inativa. Entre na mesma conta no celular e no computador.';
+        ? 'Sincronização ativa: $email'
+        : 'Sincronização inativa. Entre na mesma conta no celular e no computador.';
     return Card(
       color: sync.canSync
           ? Theme.of(context)
@@ -238,7 +238,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       final count = await widget.store.syncFromRemote(widget.unit.beds);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sincronizacao concluida ($count registros).')),
+        SnackBar(content: Text('Sincronização concluída ($count registros).')),
       );
     } catch (error) {
       if (!mounted) return;
@@ -256,7 +256,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       builder: (context) => AlertDialog(
         title: Text('Limpar ${widget.unit.name}?'),
         content: const Text(
-          'Isso apaga todos os preenchimentos salvos desta ala. Os outros setores nao serao alterados.',
+          'Isso apaga todos os preenchimentos salvos desta ala. Os outros setores não serão alterados.',
         ),
         actions: [
           TextButton(
@@ -287,7 +287,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
             icon: Icons.edit_outlined
           ),
         BedProgressStatus.completed => (
-            label: 'Concluido',
+            label: 'Concluído',
             icon: Icons.check_circle_outline
           ),
       };

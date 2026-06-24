@@ -60,7 +60,7 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => setState(_selectedIds.clear),
-                        child: const Text('Limpar selecao'),
+                        child: const Text('Limpar seleção'),
                       ),
                     ),
                   ],
@@ -155,7 +155,7 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
       builder: (context) => AlertDialog(
         title: Text('Limpar ${widget.unit.name}?'),
         content: const Text(
-          'Isso apaga os preenchimentos salvos desta ala. Os outros setores nao serao alterados.',
+          'Isso apaga os preenchimentos salvos desta ala. Os outros setores não serão alterados.',
         ),
         actions: [
           TextButton(

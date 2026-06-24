@@ -279,12 +279,12 @@ void main() {
     ));
 
     expect(summary, contains('PAM COLETADA: 72 MMHG'));
-    expect(summary, contains('PESO COLETADO PARA CALCULO DE DIURESE: 70 KG'));
+    expect(summary, contains('PESO COLETADO PARA CÁLCULO DE DIURESE: 70 KG'));
     expect(summary, contains('RASS COLETADO: -4'));
-    expect(summary, contains('SINCRONIA COM VENTILADOR COLETADA: SINCRONICO'));
+    expect(summary, contains('SINCRONIA COM VENTILADOR COLETADA: SINCRÔNICO'));
     expect(summary,
-        contains('EDEMA/ALTERACOES EM MMII COLETADOS: COM EDEMA ++/4+ EM MID'));
+        contains('EDEMA/ALTERAÇÕES EM MMII COLETADOS: COM EDEMA ++/4+ EM MID'));
     expect(summary,
-        contains('HA DADOS SUFICIENTES PARA CALCULAR ML/KG/H DA DIURESE'));
+        contains('HÁ DADOS SUFICIENTES PARA CALCULAR ML/KG/H DA DIURESE'));
   });
 }
