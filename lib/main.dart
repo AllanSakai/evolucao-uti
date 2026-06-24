@@ -6,11 +6,15 @@ import 'services/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (SupabaseConfig.isConfigured) {
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      anonKey: SupabaseConfig.anonKey,
-    );
+  if (SupabaseConfig.hasKeys) {
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      );
+    } catch (_) {
+      SupabaseConfig.initializationFailed = true;
+    }
   }
   runApp(const EvolucaoUtiApp());
 }

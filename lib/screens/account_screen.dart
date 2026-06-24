@@ -24,6 +24,7 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     final configured = SupabaseConfig.isConfigured;
+    final hasKeys = SupabaseConfig.hasKeys;
     final user = SupabaseConfig.client?.auth.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('Conta e sincronizacao')),
@@ -43,6 +44,8 @@ class _AccountScreenState extends State<AccountScreen> {
                         Text(
                           configured
                               ? 'Supabase configurado'
+                              : hasKeys
+                                  ? 'Supabase com erro de inicializacao'
                               : 'Supabase ainda nao configurado',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
@@ -50,6 +53,8 @@ class _AccountScreenState extends State<AccountScreen> {
                         Text(
                           configured
                               ? 'Ao entrar, seus preenchimentos serao sincronizados entre celular e computador.'
+                              : hasKeys
+                                  ? 'As chaves foram recebidas, mas o Supabase nao iniciou. Confira as secrets e publique novamente.'
                               : 'O app continua funcionando localmente. Depois que voce criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
                         ),
                       ],
