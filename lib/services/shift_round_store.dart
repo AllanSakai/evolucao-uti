@@ -116,26 +116,30 @@ class PersistentShiftRoundStore extends ChangeNotifier
 
   @override
   Future<int> syncFromRemote(List<Bed> unitBeds) async {
-    for (final selected in _beds.values) {
-      if (selected.evolutionData == null) continue;
-      await _sync.upsertBed(
-        bed: selected.bed,
-        status: selected.status,
-        evolutionData: selected.evolutionData,
-      );
-    }
     final remoteBeds = await _sync.fetchUnit(unitCode);
-    if (remoteBeds.isEmpty) return 0;
+    final remoteIds = <String>{};
     final bedsById = {for (final bed in unitBeds) bed.id: bed};
     for (final remote in remoteBeds) {
       final bed = bedsById[remote.bedId];
       if (bed == null) continue;
+      remoteIds.add(remote.bedId);
       _beds[remote.bedId] = SelectedBed(
         bed: bed,
         evolutionData: remote.evolutionData,
         status: remote.status,
       );
     }
+
+    for (final selected in _beds.values) {
+      if (selected.evolutionData == null) continue;
+      if (remoteIds.contains(selected.bed.id)) continue;
+      await _sync.upsertBed(
+        bed: selected.bed,
+        status: selected.status,
+        evolutionData: selected.evolutionData,
+      );
+    }
+
     _persist();
     notifyListeners();
     return remoteBeds.length;

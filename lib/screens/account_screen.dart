@@ -46,7 +46,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               ? 'Supabase configurado'
                               : hasKeys
                                   ? 'Supabase com erro de inicializacao'
-                              : 'Supabase ainda nao configurado',
+                                  : 'Supabase ainda nao configurado',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
@@ -55,7 +55,7 @@ class _AccountScreenState extends State<AccountScreen> {
                               ? 'Ao entrar, seus preenchimentos serao sincronizados entre celular e computador.'
                               : hasKeys
                                   ? 'As chaves foram recebidas, mas o Supabase nao iniciou. Confira as secrets e publique novamente.'
-                              : 'O app continua funcionando localmente. Depois que voce criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
+                                  : 'O app continua funcionando localmente. Depois que voce criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
                         ),
                       ],
                     ),
@@ -122,8 +122,19 @@ class _AccountScreenState extends State<AccountScreen> {
       await SupabaseConfig.client!.auth.signUp(
         email: _email.text.trim(),
         password: _password.text,
+        emailRedirectTo: _emailRedirectUrl(),
       );
     }, 'Conta criada. Se o Supabase pedir confirmacao, confirme pelo e-mail.');
+  }
+
+  String _emailRedirectUrl() {
+    final uri = Uri.base;
+    var path = uri.path;
+    if (!path.endsWith('/')) {
+      final lastSlash = path.lastIndexOf('/');
+      path = lastSlash < 0 ? '/' : path.substring(0, lastSlash + 1);
+    }
+    return uri.replace(path: path, query: '', fragment: '').toString();
   }
 
   Future<void> _authAction(
