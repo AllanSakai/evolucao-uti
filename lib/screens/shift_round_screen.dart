@@ -6,6 +6,7 @@ import '../services/evolution_generator.dart';
 import '../services/shift_round_store.dart';
 import '../services/supabase_sync_service.dart';
 import '../widgets/medical_disclaimer.dart';
+import 'account_screen.dart';
 import 'evolution_form_screen.dart';
 import 'evolution_preview_screen.dart';
 
@@ -55,6 +56,11 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.cloud_sync_outlined),
+          ),
+          IconButton(
+            tooltip: 'Conta e sincronizacao',
+            onPressed: _openAccount,
+            icon: const Icon(Icons.account_circle_outlined),
           ),
           IconButton(
             tooltip: 'Limpar ala',
@@ -196,10 +202,25 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                 : Icons.cloud_off_outlined),
             const SizedBox(width: 8),
             Expanded(child: Text(text)),
+            if (!sync.canSync) ...[
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _openAccount,
+                child: const Text('Entrar'),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _openAccount() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const AccountScreen()),
+    );
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _syncNow() async {
