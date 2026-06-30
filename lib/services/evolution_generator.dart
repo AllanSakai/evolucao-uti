@@ -14,6 +14,7 @@ class EvolutionGenerator {
       'MODELO A USAR: ${_referenceModelName(data)}.',
       'COMPARE A EVOLUÇÃO FINAL COM ESSE MODELO E COLOQUE EM **NEGRITO** TODO TRECHO QUE TENHA SIDO ALTERADO, SUBSTITUÍDO OU ACRESCENTADO EM RELAÇÃO A ELE. ISSO TAMBÉM SE APLICA A VALORES, ACHADOS E INFORMAÇÕES VINDAS DAS OBSERVAÇÕES. NÃO COLOQUE EM NEGRITO OS TRECHOS QUE PERMANECEREM IGUAIS AO MODELO.',
       'REGRA OBRIGATÓRIA DE MARKDOWN: CADA TRECHO DESTACADO DEVE COMEÇAR E TERMINAR COM DOIS ASTERISCOS, NO FORMATO **TRECHO ALTERADO**. NUNCA DEIXE ** SOLTO, SEM PAR OU COLADO APENAS AO FINAL DE UMA FRASE. QUANDO PARTE DE UMA FRASE FOR MANTIDA E PARTE FOR ALTERADA, ABRA O NEGRITO EXATAMENTE ANTES DA PRIMEIRA PALAVRA ALTERADA E FECHE-O DEPOIS DA ÚLTIMA. ANTES DE RESPONDER, CONFIRA QUE TODOS OS MARCADORES ** ESTÃO CORRETAMENTE PAREADOS.',
+      'INTERPRETAÇÃO TEMPORAL: O PADRÃO PRESSÓRICO (NORMOTENSO, HIPOTENSO, HIPERTENSO OU TENDENDO) REPRESENTA A TENDÊNCIA OBSERVADA DURANTE O PERÍODO; PA, PAM, FC, TEMPERATURA E SPO2 NUMÉRICAS SÃO MEDIDAS PONTUAIS NO MOMENTO DA AVALIAÇÃO. PRESERVE AS DUAS INFORMAÇÕES, DEIXE ESSA TEMPORALIDADE CLARA NA REDAÇÃO E NÃO AS TRATE COMO CONTRADIÇÃO APENAS PORQUE UM VALOR PONTUAL DIFERE DA TENDÊNCIA DO PERÍODO.',
       '',
     ];
 
@@ -89,12 +90,13 @@ class EvolutionGenerator {
       if (data.hemodynamicState != null)
         'Hemodinâmica: ${data.hemodynamicState == HemodynamicState.estavel ? 'estável' : 'instável'}.',
       if (data.bloodPressureState != null)
-        'Padrão pressórico: ${_bloodPressure(data.bloodPressureState!, data.sex == Sex.feminino)}.',
+        'Tendência pressórica observada durante o período: ${_bloodPressure(data.bloodPressureState!, data.sex == Sex.feminino)}.',
       if (_clean(data.bloodPressure) != null)
-        'PA: ${_clean(data.bloodPressure)} mmHg.',
+        'PA pontual no momento da avaliação: ${_clean(data.bloodPressure)} mmHg.',
       if (_clean(data.meanArterialPressure) != null)
-        'PAM: ${_clean(data.meanArterialPressure)} mmHg.',
-      if (_clean(data.heartRate) != null) 'FC: ${_clean(data.heartRate)} bpm.',
+        'PAM pontual no momento da avaliação: ${_clean(data.meanArterialPressure)} mmHg.',
+      if (_clean(data.heartRate) != null)
+        'FC pontual no momento da avaliação: ${_clean(data.heartRate)} bpm.',
       if (data.vasoactiveSupport != null)
         'DVA: ${data.vasoactiveSupport == VasoactiveSupport.comDva ? 'com DVA' : 'sem DVA'}.',
       if (data.vasoactiveDrugRates.isNotEmpty)

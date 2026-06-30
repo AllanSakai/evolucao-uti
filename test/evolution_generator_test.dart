@@ -256,6 +256,7 @@ void main() {
     expect(summary, contains('**TRECHO ALTERADO**'));
     expect(summary,
         contains('TODOS OS MARCADORES ** ESTÃO CORRETAMENTE PAREADOS'));
+    expect(summary, contains('INTERPRETAÇÃO TEMPORAL'));
     expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
     expect(summary, isNot(contains('REGRAS DE PADRÃO')));
   });
