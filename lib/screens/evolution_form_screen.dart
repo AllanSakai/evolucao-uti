@@ -1079,8 +1079,32 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
           ? TextInputType.numberWithOptions(decimal: true, signed: signed)
           : null,
       maxLines: lines,
-      decoration: InputDecoration(labelText: label, hintText: hint),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        suffixIcon: signed
+            ? IconButton(
+                tooltip: 'Alternar sinal positivo/negativo',
+                onPressed: () => _toggleSign(key),
+                icon: const Text('+/−'),
+              )
+            : null,
+      ),
     );
+  }
+
+  void _toggleSign(String key) {
+    final controller = _fields[key]!;
+    final value = controller.text.trim();
+    if (value.startsWith('-')) {
+      controller.text = value.substring(1);
+    } else if (value.startsWith('+')) {
+      controller.text = '-${value.substring(1)}';
+    } else {
+      controller.text = value.isEmpty ? '-' : '-$value';
+    }
+    controller.selection =
+        TextSelection.collapsed(offset: controller.text.length);
   }
 
   Widget _row(Widget left, Widget right) => Row(
