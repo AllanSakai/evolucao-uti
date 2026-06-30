@@ -253,6 +253,9 @@ void main() {
     expect(summary, contains('"### UTI A - LEITO 3"'));
     expect(summary, contains('NÃO OMITA NEM ALTERE ESTE CABEÇALHO'));
     expect(summary, contains('COLOQUE EM **NEGRITO** TODO TRECHO'));
+    expect(summary, contains('**TRECHO ALTERADO**'));
+    expect(summary,
+        contains('TODOS OS MARCADORES ** ESTÃO CORRETAMENTE PAREADOS'));
     expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
     expect(summary, isNot(contains('REGRAS DE PADRÃO')));
   });
