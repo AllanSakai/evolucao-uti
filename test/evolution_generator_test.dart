@@ -253,11 +253,8 @@ void main() {
     expect(summary, contains('"### UTI A - LEITO 3"'));
     expect(summary, contains('NÃO OMITA NEM ALTERE ESTE CABEÇALHO'));
     expect(summary, contains('COLOQUE EM NEGRITO APENAS OS TRECHOS ALTERADOS'));
-    expect(summary, contains('AFEBRIL, **COM TEMPERATURA MEDIDA'));
-    expect(summary, contains('AFEBRIL**, COM TEMPERATURA MEDIDA'));
-    expect(summary, contains('NORMOTENSA **DURANTE O PERÍODO'));
-    expect(summary, contains('NORMOTENSA**, COM PA PONTUAL'));
-    expect(summary, contains('SE TODO ** TEM ABERTURA E FECHAMENTO'));
+    expect(summary, contains('NO FORMATO **TRECHO ALTERADO**'));
+    expect(summary, contains('SE NÃO HÁ ** SOLTO OU MAL PAREADO'));
     expect(summary, contains('INTERPRETAÇÃO TEMPORAL'));
     expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
     expect(summary, isNot(contains('REGRAS DE PADRÃO')));
