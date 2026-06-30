@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/icu_unit.dart';
+import '../models/evolution_data.dart';
 import '../models/selected_bed.dart';
 import '../services/evolution_generator.dart';
 import '../services/shift_round_store.dart';
@@ -102,6 +103,12 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                 const SizedBox(height: 8),
                 _syncStatusCard(),
                 const SizedBox(height: 12),
+                FilledButton.tonalIcon(
+                  onPressed: _showDiuresisAndBalanceSummary,
+                  icon: const Icon(Icons.water_drop_outlined),
+                  label: const Text('Resumo de diurese e BH'),
+                ),
+                const SizedBox(height: 12),
                 ...widget.store.beds.map(_bedCard),
               ],
             ),
@@ -178,6 +185,42 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
         onConfirmed: () => widget.store.markCompleted(selected.bed.id),
       ),
     ));
+  }
+
+  void _showDiuresisAndBalanceSummary() {
+    final rows = widget.store.beds.map((selected) {
+      final data = selected.evolutionData;
+      final diuresis = data == null
+          ? 'não preenchida'
+          : data.diuresisType == DiuresisType.ausente
+              ? 'ausente'
+              : data.diuresisVolume?.trim().isNotEmpty == true
+                  ? '${data.diuresisVolume} mL / ${data.diuresisPeriod ?? "período não informado"}'
+                  : data.diuresisType == DiuresisType.espontanea
+                      ? 'espontânea, não quantificada'
+                      : 'SVD, não quantificada';
+      final balance = data?.fluidBalance?.trim().isNotEmpty == true
+          ? '${data!.fluidBalance} mL / ${data.fluidBalancePeriod ?? "período não informado"}'
+          : 'não quantificado';
+      return '${selected.bed.displayName}\nDiurese: $diuresis\nBH: $balance';
+    }).join('\n\n');
+
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Diurese e BH da ala'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(child: SelectableText(rows)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _syncStatusCard() {

@@ -185,6 +185,17 @@ void main() {
     expect(text, contains('VT EXPIRADO 410 ML'));
   });
 
+  test('PSV ignora sincronia com ventilador', () {
+    const data = EvolutionData(
+      sex: Sex.masculino,
+      ventilatorySupport: VentilatorySupport.iotVm,
+      ventilationMode: 'PSV',
+      ventilatorSynchrony: false,
+    );
+    expect(generator.generate(data), isNot(contains('ASSINCRONICO')));
+    expect(generator.generateSummary(data), isNot(contains('ASSINCRÔNICO')));
+  });
+
   test('aplica unidades de sedacao e DVA', () {
     final text = generator.generate(const EvolutionData(
       sex: Sex.masculino,
@@ -217,6 +228,26 @@ void main() {
     ));
     expect(text, contains('DIURESE POR SVD DE 500 ML NAS ULTIMAS 12H'));
     expect(text, contains('BH POSITIVO EM +300 ML NAS ULTIMAS 18H'));
+  });
+
+  test('usa padroes quando diurese espontanea e BH estao em branco', () {
+    final text = generator.generate(const EvolutionData(
+      sex: Sex.masculino,
+      diuresisType: DiuresisType.espontanea,
+    ));
+    expect(
+        text,
+        contains(
+            'DIURESE ESPONTANEA E EFETIVA, NÃO QUANTIFICADA, SEM QUEIXAS'));
+    expect(text, contains('BH NÃO QUANTIFICADO'));
+  });
+
+  test('resumo envia somente dados estruturados, sem repetir diretrizes', () {
+    final summary =
+        generator.generateSummary(const EvolutionData(sex: Sex.masculino));
+    expect(summary, startsWith('RESUMO ESTRUTURADO'));
+    expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
+    expect(summary, isNot(contains('REGRAS DE PADRÃO')));
   });
 
   test('usa modelo de exame fisico quando todo o bloco esta vazio', () {

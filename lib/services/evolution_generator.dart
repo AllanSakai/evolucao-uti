@@ -6,9 +6,6 @@ class EvolutionGenerator {
     final lines = <String>[
       'RESUMO ESTRUTURADO PARA GERAR EVOLUÇÃO MÉDICA DE UTI',
       '',
-      'INSTRUÇÃO PARA O GPT:',
-      'ESCREVA UMA EVOLUÇÃO MÉDICA DE PLANTÃO EM UTI, EM PORTUGUÊS DO BRASIL, TEXTO CORRIDO, TÉCNICA, OBJETIVA E EM CAIXA ALTA. CORRIJA ORTOGRAFIA E ACENTUAÇÃO DO TEXTO FINAL. USE APENAS OS DADOS ABAIXO. NÃO INVENTE INFORMAÇÕES NÃO INFORMADAS. NÃO PRESCREVA CONDUTAS. SE HOUVER INCONSISTÊNCIAS OU DADOS CLINICAMENTE IMPORTANTES AUSENTES, APONTE ANTES OU DEPOIS DO TEXTO COMO ALERTAS NÃO PRESCRITIVOS.',
-      '',
     ];
 
     void section(String title, List<String> items) {
@@ -35,7 +32,8 @@ class EvolutionGenerator {
       if (_clean(data.weight) != null)
         'Peso coletado para cálculo de diurese: ${_clean(data.weight)} kg.',
       if (_clean(data.rass) != null) 'RASS coletado: ${_clean(data.rass)}.',
-      if (data.ventilatorSynchrony != null)
+      if (data.ventilatorSynchrony != null &&
+          data.ventilationMode?.toUpperCase() != 'PSV')
         'Sincronia com ventilador coletada: ${data.ventilatorSynchrony! ? 'sincrônico' : 'assincrônico'}.',
       if (_clean(data.lowerLimbsExam) != null)
         'Edema/alterações em MMII coletados: ${_clean(data.lowerLimbsExam)}.',
@@ -73,7 +71,8 @@ class EvolutionGenerator {
         'O2 domiciliar: sim, vazão habitual ${_clean(data.homeOxygenFlow)} L/min.',
       if (_clean(data.oxygenSaturation) != null)
         'SpO2: ${_clean(data.oxygenSaturation)}%.',
-      if (data.ventilatorSynchrony != null)
+      if (data.ventilatorSynchrony != null &&
+          data.ventilationMode?.toUpperCase() != 'PSV')
         'Sincronia com ventilador: ${data.ventilatorSynchrony! ? 'sincrônico' : 'assincrônico'}.',
     ]);
 
@@ -258,10 +257,10 @@ class EvolutionGenerator {
       final mlKgHour = _diuresisMlKgHour(data);
       renal.add(
           '${_diuresisPrefix(data.diuresisType)} DE $volume ML${period == null ? '' : ' NAS ULTIMAS $period'}${mlKgHour == null ? '' : ' (≈ $mlKgHour ML/KG/H)'}');
+    } else if (data.diuresisType == DiuresisType.espontanea) {
+      renal.add('DIURESE ESPONTANEA E EFETIVA, NÃO QUANTIFICADA, SEM QUEIXAS');
     } else if (data.diuresisType != null) {
       renal.add(_diuresis(data.diuresisType!, standardAwake));
-    } else if (standardAwake && data.diuresisType == DiuresisType.espontanea) {
-      renal.add('NÃO QUANTIFICADA');
     }
     _addIf(renal, data.diuresisAppearance, (v) => v);
     _addIf(renal, data.fluidBalance, (v) {
@@ -272,6 +271,7 @@ class EvolutionGenerator {
           : '+${v.trim()}';
       return 'BH $signal EM $normalized ML${period == null ? '' : ' NAS ULTIMAS $period'}';
     });
+    if (_clean(data.fluidBalance) == null) renal.add('BH NÃO QUANTIFICADO');
     _sentence(sentences, renal);
 
     final bowel = <String>[];
@@ -392,7 +392,8 @@ class EvolutionGenerator {
       _addIf(parameters, data.fio2, (v) => 'FIO2 $v%');
       _addIf(parameters, data.peep, (v) => 'PEEP $v');
       final saturation = _clean(data.oxygenSaturation);
-      final synchrony = data.ventilatorSynchrony == null
+      final synchrony = data.ventilationMode?.toUpperCase() == 'PSV' ||
+              data.ventilatorSynchrony == null
           ? ''
           : data.ventilatorSynchrony!
               ? ', SINCRONICO COM O VENTILADOR'

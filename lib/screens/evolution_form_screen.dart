@@ -241,6 +241,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                 const MedicalDisclaimer(),
                 const SizedBox(height: 12),
                 if (widget.bed != null) _bedHeader(context),
+                _generateButton(),
+                const SizedBox(height: 12),
                 FormSection(title: 'Modelo do paciente', children: [
                   _segmented<Sex>(
                     values: Sex.values,
@@ -347,13 +349,14 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     _row(_text('fr', 'FR', number: true),
                         _text('fio2', 'FiO2 %', number: true)),
                     _row(_text('peep', 'PEEP', number: true), _vmMainField()),
-                    _chips<bool>(
-                      title: 'Sincronia com VM',
-                      values: const [true, false],
-                      selected: _vmSynchrony,
-                      labelOf: (v) => v ? 'Sincrônico' : 'Assincrônico',
-                      onChanged: (v) => _update(() => _vmSynchrony = v),
-                    ),
+                    if (_ventilationMode != 'PSV')
+                      _chips<bool>(
+                        title: 'Sincronia com VM',
+                        values: const [true, false],
+                        selected: _vmSynchrony,
+                        labelOf: (v) => v ? 'Sincrônico' : 'Assincrônico',
+                        onChanged: (v) => _update(() => _vmSynchrony = v),
+                      ),
                   ],
                 ]),
                 FormSection(title: 'Hemodinâmica', children: [
@@ -452,7 +455,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       _text('urineAppearance', 'Aspecto',
                           hint: 'Clara, concentrada...'),
                     ),
-                  _text('balance', 'BH', hint: '+450', number: true),
+                  _text('balance', 'BH',
+                      hint: '+450', number: true, signed: true),
                   _chips<BowelMovement>(
                     title: 'Evacuação',
                     values: BowelMovement.values,
@@ -696,7 +700,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                   ),
                   if (_neurological == NeurologicalState.sedado ||
                       _isDeepSedation) ...[
-                    _text('rass', 'RASS', hint: '-5', number: true),
+                    _text('rass', 'RASS',
+                        hint: '-5', number: true, signed: true),
                   ] else ...[
                     _gcsSummary(),
                     _chips<String>(
@@ -848,6 +853,15 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
             label: const Text('Padrão IOT/VM'),
           ),
         ],
+      );
+
+  Widget _generateButton() => FilledButton.icon(
+        onPressed: _generate,
+        icon: const Icon(Icons.description_outlined),
+        label: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 14),
+          child: Text('Gerar resumo'),
+        ),
       );
 
   Widget _temperatureField() => TextField(
@@ -1058,11 +1072,12 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   }
 
   Widget _text(String key, String label,
-      {String? hint, bool number = false, int lines = 1}) {
+      {String? hint, bool number = false, bool signed = false, int lines = 1}) {
     return TextField(
       controller: _fields[key],
-      keyboardType:
-          number ? const TextInputType.numberWithOptions(decimal: true) : null,
+      keyboardType: number
+          ? TextInputType.numberWithOptions(decimal: true, signed: signed)
+          : null,
       maxLines: lines,
       decoration: InputDecoration(labelText: label, hintText: hint),
     );
@@ -1150,6 +1165,30 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   }
 
   String? _pulmonaryExam() {
+    final sameMv = _rightMvPresent == _leftMvPresent;
+    final sameFindings =
+        _rightPulmonaryFindings.length == _leftPulmonaryFindings.length &&
+            _rightPulmonaryFindings.containsAll(_leftPulmonaryFindings);
+    final sameLocations =
+        _rightPulmonaryLocations.length == _leftPulmonaryLocations.length &&
+            _rightPulmonaryLocations.containsAll(_leftPulmonaryLocations);
+    if (sameMv && sameFindings && sameLocations) {
+      final values = <String>[];
+      if (_rightMvPresent != null) {
+        values.add(_rightMvPresent!
+            ? 'MV+ BILATERALMENTE'
+            : 'MV AUSENTE BILATERALMENTE');
+      }
+      if (_rightPulmonaryFindings.isEmpty && _rightMvPresent == true) {
+        values.add('SEM RA');
+      } else if (_rightPulmonaryFindings.isNotEmpty) {
+        final location = _rightPulmonaryLocations.isEmpty
+            ? 'DIFUSOS GLOBALMENTE'
+            : 'EM ${_rightPulmonaryLocations.join(' E ')} BILATERALMENTE';
+        values.add('${_rightPulmonaryFindings.join(' E ')} $location');
+      }
+      return values.isEmpty ? null : values.join(', ');
+    }
     final right = _lungText(
       'DIREITA',
       _rightMvPresent,
@@ -1201,7 +1240,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     if (_lowerLimbAmputation) {
       values.add('COM AMPUTAÇÃO${_lowerLimbSidesText()}');
     }
-    return values.isEmpty ? null : values.join(', ');
+    return values.isEmpty ? 'SEM EDEMA OU EMPASTAMENTO' : values.join(', ');
   }
 
   String _lowerLimbSidesText() =>
@@ -1346,7 +1385,10 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
             _support == VentilatorySupport.cateterNasal && _usesHomeOxygen
                 ? _value('homeOxygenFlow')
                 : null,
-        ventilatorSynchrony: _isMechanicalVentilation ? _vmSynchrony : null,
+        ventilatorSynchrony:
+            _isMechanicalVentilation && _ventilationMode != 'PSV'
+                ? _vmSynchrony
+                : null,
         oxygenSaturation: _value('spo2'),
         bloodPressure: _bloodPressureValue(),
         meanArterialPressure: _value('pam'),
