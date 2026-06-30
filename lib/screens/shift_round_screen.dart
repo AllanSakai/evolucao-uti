@@ -181,7 +181,10 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       builder: (_) => EvolutionPreviewScreen(
         data: data,
         bed: selected.bed,
-        generatedText: EvolutionGenerator().generateSummary(data),
+        generatedText: EvolutionGenerator().generateSummary(
+          data,
+          bedLabel: selected.bed.displayName,
+        ),
         onConfirmed: () => widget.store.markCompleted(selected.bed.id),
       ),
     ));

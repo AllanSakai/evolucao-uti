@@ -34,7 +34,10 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
     super.initState();
     _controller = TextEditingController(
       text: widget.generatedText ??
-          EvolutionGenerator().generateSummary(widget.data),
+          EvolutionGenerator().generateSummary(
+            widget.data,
+            bedLabel: widget.bed?.displayName,
+          ),
     );
   }
 

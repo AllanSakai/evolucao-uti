@@ -2,9 +2,17 @@ import '../models/evolution_data.dart';
 import '../utils/drug_options.dart';
 
 class EvolutionGenerator {
-  String generateSummary(EvolutionData data) {
+  String generateSummary(EvolutionData data, {String? bedLabel}) {
     final lines = <String>[
       'RESUMO ESTRUTURADO PARA GERAR EVOLUÇÃO MÉDICA DE UTI',
+      '',
+      if (_clean(bedLabel) != null) ...[
+        'IDENTIFICAÇÃO DO LEITO: ${_clean(bedLabel)}.',
+        'FORMATAÇÃO OBRIGATÓRIA: A PRIMEIRA LINHA DA RESPOSTA DEVE SER EXATAMENTE "### ${_clean(bedLabel)}". NÃO OMITA NEM ALTERE ESTE CABEÇALHO.',
+        '',
+      ],
+      'MODELO A USAR: ${_referenceModelName(data)}.',
+      'COMPARE A EVOLUÇÃO FINAL COM ESSE MODELO E COLOQUE EM **NEGRITO** TODO TRECHO QUE TENHA SIDO ALTERADO, SUBSTITUÍDO OU ACRESCENTADO EM RELAÇÃO A ELE. ISSO TAMBÉM SE APLICA A VALORES, ACHADOS E INFORMAÇÕES VINDAS DAS OBSERVAÇÕES. NÃO COLOQUE EM NEGRITO OS TRECHOS QUE PERMANECEREM IGUAIS AO MODELO.',
       '',
     ];
 
@@ -173,6 +181,15 @@ class EvolutionGenerator {
     ]);
 
     return lines.join('\n').trim().toUpperCase();
+  }
+
+  String _referenceModelName(EvolutionData data) {
+    final sedated = data.template == EvolutionTemplate.sedadoIotVm ||
+        data.neurologicalState == NeurologicalState.sedado;
+    if (sedated) return 'MODELO 3 — SEDADO/VM';
+    return data.sex == Sex.feminino
+        ? 'MODELO 2 — ACORDADA FEMININA'
+        : 'MODELO 1 — ACORDADO MASCULINO';
   }
 
   String generate(EvolutionData data) {

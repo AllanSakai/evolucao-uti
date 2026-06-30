@@ -242,12 +242,33 @@ void main() {
     expect(text, contains('BH NÃO QUANTIFICADO'));
   });
 
-  test('resumo envia somente dados estruturados, sem repetir diretrizes', () {
-    final summary =
-        generator.generateSummary(const EvolutionData(sex: Sex.masculino));
+  test('resumo exige cabecalho e negrito nas diferencas do modelo', () {
+    final summary = generator.generateSummary(
+      const EvolutionData(sex: Sex.masculino),
+      bedLabel: 'UTI A - LEITO 3',
+    );
     expect(summary, startsWith('RESUMO ESTRUTURADO'));
+    expect(summary, contains('MODELO A USAR: MODELO 1'));
+    expect(summary, contains('IDENTIFICAÇÃO DO LEITO: UTI A - LEITO 3'));
+    expect(summary, contains('"### UTI A - LEITO 3"'));
+    expect(summary, contains('NÃO OMITA NEM ALTERE ESTE CABEÇALHO'));
+    expect(summary, contains('COLOQUE EM **NEGRITO** TODO TRECHO'));
     expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
     expect(summary, isNot(contains('REGRAS DE PADRÃO')));
+  });
+
+  test('resumo seleciona modelo feminino e sedado', () {
+    final female = generator.generateSummary(
+      const EvolutionData(sex: Sex.feminino),
+    );
+    final sedated = generator.generateSummary(
+      const EvolutionData(
+        sex: Sex.masculino,
+        neurologicalState: NeurologicalState.sedado,
+      ),
+    );
+    expect(female, contains('MODELO 2 — ACORDADA FEMININA'));
+    expect(sedated, contains('MODELO 3 — SEDADO/VM'));
   });
 
   test('usa modelo de exame fisico quando todo o bloco esta vazio', () {
