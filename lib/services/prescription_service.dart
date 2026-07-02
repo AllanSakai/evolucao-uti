@@ -2,6 +2,8 @@ import '../models/medication.dart';
 import '../models/prescription.dart';
 
 class PrescriptionService {
+  static const _minimumSeparatorLength = 48;
+
   String generate(Prescription prescription) {
     final medications = prescription.items.map((item) => item.medication);
     final grouped =
@@ -29,8 +31,8 @@ class PrescriptionService {
       for (final entry in group) {
         final medication = entry.drug;
         final left = '${entry.number}) ${_description(medication)}';
-        final padding = width - left.length + 3;
-        final hyphens = padding < 3 ? 3 : padding;
+        final hyphens =
+            width - left.length + PrescriptionService._minimumSeparatorLength;
         buffer.writeln(
           '$left ${'-' * hyphens} ${medication.dispensingQuantity}',
         );

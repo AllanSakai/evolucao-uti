@@ -53,6 +53,10 @@ void main() {
     expect(text, isNot(contains('Pantoprazol 20 mg comprimido')));
     final lines =
         text.split('\n').where((line) => RegExp(r'^\d+\)').hasMatch(line));
+    expect(
+      RegExp(r'-+').firstMatch(lines.first)!.group(0)!.length,
+      greaterThanOrEqualTo(48),
+    );
     expect(lines.map((line) => line.lastIndexOf('01 caixa')).toSet(),
         hasLength(1));
   });
