@@ -5,6 +5,7 @@ import '../models/icu_unit.dart';
 import '../services/shift_round_store.dart';
 import '../widgets/medical_disclaimer.dart';
 import 'account_screen.dart';
+import 'medical_discharge_screen.dart';
 import 'shift_round_screen.dart';
 
 class IcuUnitSelectionScreen extends StatelessWidget {
@@ -33,6 +34,26 @@ class IcuUnitSelectionScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 const MedicalDisclaimer(),
+                const SizedBox(height: 20),
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    leading:
+                        const Icon(Icons.medical_services_outlined, size: 34),
+                    title: Text('Alta Médica',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    subtitle: const Text(
+                      'Atestado, receita e banco de medicamentos',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const MedicalDischargeScreen(),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 Text('Selecione a UTI do plantão',
                     style: Theme.of(context).textTheme.headlineSmall),
