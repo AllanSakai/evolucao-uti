@@ -2,7 +2,7 @@ import '../models/medication.dart';
 import '../models/prescription.dart';
 
 class PrescriptionService {
-  static const _minimumSeparatorLength = 48;
+  static const _a4LineLength = 80;
 
   String generate(Prescription prescription) {
     final medications = prescription.items.map((item) => item.medication);
@@ -20,6 +20,14 @@ class PrescriptionService {
         .expand((group) => group)
         .map((entry) => '${entry.number}) ${_description(entry.drug)}'.length)
         .fold<int>(0, (max, length) => length > max ? length : max);
+    final dispensingWidth = grouped.values
+        .expand((group) => group)
+        .map((entry) => entry.drug.dispensingQuantity.length)
+        .fold<int>(0, (max, length) => length > max ? length : max);
+    final a4RightColumn = _a4LineLength - dispensingWidth;
+    final contentRightColumn = width + 5;
+    final rightColumn =
+        a4RightColumn > contentRightColumn ? a4RightColumn : contentRightColumn;
     final buffer = StringBuffer();
 
     for (final type in MedicationUseType.values) {
@@ -31,8 +39,7 @@ class PrescriptionService {
       for (final entry in group) {
         final medication = entry.drug;
         final left = '${entry.number}) ${_description(medication)}';
-        final hyphens =
-            width - left.length + PrescriptionService._minimumSeparatorLength;
+        final hyphens = rightColumn - left.length - 2;
         buffer.writeln(
           '$left ${'-' * hyphens} ${medication.dispensingQuantity}',
         );
