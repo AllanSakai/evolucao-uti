@@ -127,72 +127,122 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text(widget.initial == null
-            ? 'Adicionar medicamento'
-            : 'Editar medicamento'),
-        content: SizedBox(
-          width: 560,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(children: [
-                _nameAutocomplete(),
-                _field(_dose, 'Dose'),
-                DropdownButtonFormField(
-                  initialValue: _presentation,
-                  decoration: const InputDecoration(labelText: 'Apresentação'),
-                  items: MedicationPresentation.values
-                      .map((value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value.label),
-                          ))
-                      .toList(),
-                  onChanged: (value) => setState(() => _presentation = value!),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField(
-                  initialValue: _useType,
-                  decoration: const InputDecoration(labelText: 'Tipo de uso'),
-                  items: MedicationUseType.values
-                      .map((value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value.label),
-                          ))
-                      .toList(),
-                  onChanged: (value) => setState(() => _useType = value!),
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField(
-                  initialValue: _route,
-                  decoration: const InputDecoration(
-                    labelText: 'Via de administração',
-                  ),
-                  items: medicationRoutes
-                      .map((value) =>
-                          DropdownMenuItem(value: value, child: Text(value)))
-                      .toList(),
-                  onChanged: (value) => setState(() => _route = value!),
-                ),
-                const SizedBox(height: 10),
-                _autocomplete(_quantity, 'Quantidade administrada',
-                    administeredQuantitySuggestions),
-                _autocomplete(_frequency, 'Frequência', frequencySuggestions),
-                _autocomplete(_dispensing, 'Quantidade para dispensação',
-                    dispensingSuggestions),
-                _field(_notes, 'Observações (opcional)', required: false),
-              ]),
+  Widget build(BuildContext context) {
+    final title =
+        widget.initial == null ? 'Adicionar medicamento' : 'Editar medicamento';
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+
+    if (isMobile) {
+      return Dialog.fullscreen(
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: 'Cancelar',
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close),
+            ),
+            title: Text(title),
+            actions: [
+              TextButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.check),
+                label: const Text('Salvar'),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                children: _formFields(),
+              ),
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(onPressed: _save, child: const Text('Salvar')),
-        ],
       );
+    }
+
+    return AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 560,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(children: _formFields()),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Salvar')),
+      ],
+    );
+  }
+
+  List<Widget> _formFields() => [
+        _nameAutocomplete(),
+        _field(_dose, 'Dose'),
+        DropdownButtonFormField(
+          isExpanded: true,
+          initialValue: _presentation,
+          decoration: const InputDecoration(labelText: 'Apresentação'),
+          items: MedicationPresentation.values
+              .map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.label),
+                  ))
+              .toList(),
+          onChanged: (value) => setState(() => _presentation = value!),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField(
+          isExpanded: true,
+          initialValue: _useType,
+          decoration: const InputDecoration(labelText: 'Tipo de uso'),
+          items: MedicationUseType.values
+              .map((value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(value.label),
+                  ))
+              .toList(),
+          onChanged: (value) => setState(() => _useType = value!),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField(
+          isExpanded: true,
+          initialValue: _route,
+          decoration: const InputDecoration(
+            labelText: 'Via de administração',
+          ),
+          items: medicationRoutes
+              .map(
+                  (value) => DropdownMenuItem(value: value, child: Text(value)))
+              .toList(),
+          onChanged: (value) => setState(() => _route = value!),
+        ),
+        const SizedBox(height: 10),
+        _autocomplete(
+          _quantity,
+          'Quantidade administrada',
+          administeredQuantitySuggestions,
+        ),
+        _autocomplete(_frequency, 'Frequência', frequencySuggestions),
+        _autocomplete(
+          _dispensing,
+          'Quantidade para dispensação',
+          dispensingSuggestions,
+        ),
+        _field(_notes, 'Observações (opcional)', required: false),
+      ];
 
   Widget _nameAutocomplete() => Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -212,6 +262,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
             return TextFormField(
               controller: controller,
               focusNode: focus,
+              scrollPadding: const EdgeInsets.only(bottom: 160),
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(labelText: 'Nome'),
               validator: (value) =>
@@ -243,6 +294,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         padding: const EdgeInsets.only(bottom: 10),
         child: TextFormField(
           controller: controller,
+          scrollPadding: const EdgeInsets.only(bottom: 160),
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(labelText: label),
           validator: required
@@ -270,6 +322,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
             return TextFormField(
               controller: fieldController,
               focusNode: focus,
+              scrollPadding: const EdgeInsets.only(bottom: 160),
               decoration: InputDecoration(labelText: label),
               validator: (value) =>
                   value == null || value.trim().isEmpty ? 'Obrigatório' : null,
