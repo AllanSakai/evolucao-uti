@@ -17,7 +17,7 @@ class _CertificateScreenState extends State<CertificateScreen> {
   final _service = CertificateService();
   PatientSex _sex = PatientSex.male;
   DateTime? _admission;
-  DateTime? _discharge;
+  DateTime? _discharge = DateUtils.dateOnly(DateTime.now());
 
   String get _text {
     if (_name.text.trim().isEmpty || _admission == null || _discharge == null) {
