@@ -44,10 +44,7 @@ class PrescriptionService {
 
   String _description(Medication medication) {
     final dose = medication.dose.trim();
-    final presentation = medication.presentation == MedicationPresentation.other
-        ? ''
-        : medication.presentation.label.toLowerCase();
-    return [medication.name.trim(), dose, presentation]
+    return [medication.name.trim(), dose]
         .where((part) => part.isNotEmpty)
         .join(' ');
   }

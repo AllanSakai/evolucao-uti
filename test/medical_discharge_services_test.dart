@@ -49,6 +49,8 @@ void main() {
       PrescriptionItem(medication: service.utiTemplate().first),
     ]));
     expect(text.indexOf('USO INTERNO'), lessThan(text.indexOf('USO TÓPICO')));
+    expect(text, contains('Pantoprazol 20 mg'));
+    expect(text, isNot(contains('Pantoprazol 20 mg comprimido')));
     final lines =
         text.split('\n').where((line) => RegExp(r'^\d+\)').hasMatch(line));
     expect(lines.map((line) => line.lastIndexOf('01 caixa')).toSet(),
