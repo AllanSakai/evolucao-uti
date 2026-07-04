@@ -27,6 +27,8 @@ const administeredQuantitySuggestions = [
   '2 cápsulas',
   '1 ampola',
   '1 sachê',
+];
+const inhaledQuantitySuggestions = [
   '1 puff',
   '2 puffs',
   '3 puffs',
@@ -237,7 +239,12 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         _autocomplete(
           _quantity,
           'Quantidade administrada',
-          administeredQuantitySuggestions,
+          _useType == MedicationUseType.inhaled
+              ? [
+                  ...inhaledQuantitySuggestions,
+                  ...administeredQuantitySuggestions,
+                ]
+              : administeredQuantitySuggestions,
         ),
         _autocomplete(_frequency, 'Frequência', frequencySuggestions),
         _autocomplete(
@@ -327,7 +334,10 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
               controller: fieldController,
               focusNode: focus,
               scrollPadding: const EdgeInsets.only(bottom: 160),
-              decoration: InputDecoration(labelText: label),
+              decoration: InputDecoration(
+                labelText: label,
+                suffixIcon: const Icon(Icons.arrow_drop_down),
+              ),
               validator: (value) =>
                   value == null || value.trim().isEmpty ? 'Obrigatório' : null,
             );

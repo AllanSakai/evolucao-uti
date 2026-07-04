@@ -5,9 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('quantidades administradas incluem opções inalatórias', () {
     expect(
-      administeredQuantitySuggestions,
+      inhaledQuantitySuggestions,
       containsAll(['1 puff', '2 puffs', '3 puffs', '4 puffs']),
     );
+    expect(inhaledQuantitySuggestions.first, '1 puff');
   });
 
   testWidgets('editor usa tela cheia rolável em celulares', (tester) async {
