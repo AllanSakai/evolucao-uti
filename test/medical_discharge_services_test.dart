@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:evolucao_uti/data/common_medications_data.dart';
 import 'package:evolucao_uti/models/certificate.dart';
 import 'package:evolucao_uti/models/medication.dart';
 import 'package:evolucao_uti/models/prescription.dart';
@@ -67,8 +70,43 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final repository = await LocalMedicationRepository.load();
 
-    expect((await repository.search(' Pan ')).single.name, 'Pantoprazol');
-    expect((await repository.search('DIP')).single.name, 'Dipirona');
-    expect((await repository.search('déx')).single.name, 'Dexametasona');
+    expect(
+      (await repository.search(' Pan ')).map((item) => item.dose),
+      containsAll(['20 mg', '40 mg']),
+    );
+    expect(
+      (await repository.search('DIP')).map((item) => item.dose),
+      containsAll(['500 mg', '1 g']),
+    );
+    expect((await repository.search('déx')), isNotEmpty);
+  });
+
+  test('catálogo comum inclui variantes e preserva cadastros existentes',
+      () async {
+    const custom = Medication(
+      id: 'custom',
+      name: 'Meu medicamento',
+      dose: '15 mg',
+      presentation: MedicationPresentation.tablet,
+      useType: MedicationUseType.internal,
+      route: 'Via oral',
+      administeredQuantity: '1 comprimido',
+      frequency: 'Uma vez ao dia',
+      dispensingQuantity: '01 caixa',
+    );
+    SharedPreferences.setMockInitialValues({
+      'medical_discharge_medications': jsonEncode([custom.toJson()]),
+    });
+    final repository = await LocalMedicationRepository.load();
+    final all = await repository.getAll();
+
+    expect(all.any((item) => item.id == custom.id), isTrue);
+    expect(all.length, greaterThan(50));
+    expect(
+      commonMedicationCatalog
+          .where((item) => item.name == 'Carvedilol')
+          .map((item) => item.dose),
+      ['3,125 mg', '6,25 mg', '12,5 mg', '25 mg'],
+    );
   });
 }

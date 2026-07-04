@@ -11,6 +11,7 @@ const medicationRoutes = [
   'Via intramuscular',
   'Via endovenosa',
   'Via inalatória',
+  'Via nasal',
   'Via por sonda nasoenteral',
   'Via por gastrostomia',
 ];

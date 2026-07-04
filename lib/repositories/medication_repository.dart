@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/common_medications_data.dart';
 import '../models/medication.dart';
 import '../utils/search_normalizer.dart';
 
@@ -16,6 +17,8 @@ class LocalMedicationRepository implements MedicationRepository {
   LocalMedicationRepository(this._preferences);
   final SharedPreferences _preferences;
   static const _key = 'medical_discharge_medications';
+  static const _catalogVersionKey = 'medical_discharge_catalog_version';
+  static const _catalogVersion = 1;
 
   static Future<LocalMedicationRepository> load() async =>
       LocalMedicationRepository(await SharedPreferences.getInstance());
@@ -23,16 +26,16 @@ class LocalMedicationRepository implements MedicationRepository {
   @override
   Future<List<Medication>> getAll() async {
     final raw = _preferences.getString(_key);
-    if (raw == null) {
-      await _write(_initialMedications);
-      return [..._initialMedications];
-    }
-    final decoded = jsonDecode(raw) as List;
-    return decoded
-        .map((item) =>
-            Medication.fromJson((item as Map).cast<String, dynamic>()))
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final medications = raw == null
+        ? <Medication>[]
+        : (jsonDecode(raw) as List)
+            .map(
+              (item) =>
+                  Medication.fromJson((item as Map).cast<String, dynamic>()),
+            )
+            .toList();
+    await _mergeCatalog(medications);
+    return medications..sort((a, b) => a.name.compareTo(b.name));
   }
 
   @override
@@ -68,6 +71,26 @@ class LocalMedicationRepository implements MedicationRepository {
         _key,
         jsonEncode(medications.map((item) => item.toJson()).toList()),
       );
+
+  Future<void> _mergeCatalog(List<Medication> medications) async {
+    final installedVersion = _preferences.getInt(_catalogVersionKey) ?? 0;
+    if (installedVersion >= _catalogVersion) return;
+
+    for (final candidate in [
+      ..._initialMedications,
+      ...commonMedicationCatalog,
+    ]) {
+      final exists = medications.any(
+        (medication) =>
+            normalizeSearch(medication.name) ==
+                normalizeSearch(candidate.name) &&
+            normalizeSearch(medication.dose) == normalizeSearch(candidate.dose),
+      );
+      if (!exists) medications.add(candidate);
+    }
+    await _write(medications);
+    await _preferences.setInt(_catalogVersionKey, _catalogVersion);
+  }
 
   static const _initialMedications = [
     Medication(
