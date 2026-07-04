@@ -1,11 +1,11 @@
 import 'package:evolucao_uti/models/medication.dart';
-import 'package:evolucao_uti/utils/medication_suggestions.dart';
 import 'package:evolucao_uti/widgets/medication_editor_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('sugere todas as doses cadastradas para o mesmo medicamento', () {
+  testWidgets('autocomplete do nome identifica cada variante pela dose',
+      (tester) async {
     const base = Medication(
       id: '1',
       name: 'Carvedilol',
@@ -17,21 +17,39 @@ void main() {
       frequency: 'Duas vezes ao dia',
       dispensingQuantity: '01 caixa',
     );
-    final medications = [
+    final suggestions = [
       base,
       base.copyWith(id: '2', dose: '6,25 mg'),
       base.copyWith(id: '3', dose: '12,5 mg'),
-      base.copyWith(id: '4', name: 'Outro medicamento', dose: '20 mg'),
     ];
 
-    expect(
-      medicationDoseSuggestions(medications, '  CARVEDILOL '),
-      ['3,125 mg', '6,25 mg', '12,5 mg'],
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              onPressed: () => showMedicationEditor(
+                context,
+                suggestions: suggestions,
+              ),
+              child: const Text('Adicionar'),
+            ),
+          ),
+        ),
+      ),
     );
-    expect(
-      medicationDoseSuggestions(medications, 'Carvedilol', query: '6,'),
-      ['6,25 mg'],
-    );
+    await tester.tap(find.text('Adicionar'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextFormField);
+    expect(fields, findsWidgets);
+    await tester.enterText(fields.first, 'Carv');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Carvedilol'), findsNWidgets(3));
+    expect(find.text('3,125 mg'), findsOneWidget);
+    expect(find.text('6,25 mg'), findsOneWidget);
+    expect(find.text('12,5 mg'), findsOneWidget);
   });
 
   test('quantidades administradas incluem opções inalatórias', () {

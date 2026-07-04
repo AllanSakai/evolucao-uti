@@ -81,10 +81,22 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
         trailing: widget.selectionMode
             ? const Icon(Icons.add_circle_outline)
             : PopupMenuButton<String>(
-                onSelected: (value) =>
-                    value == 'edit' ? _edit(medication) : _delete(medication),
+                onSelected: (value) {
+                  switch (value) {
+                    case 'edit':
+                      _edit(medication);
+                    case 'duplicate':
+                      _duplicate(medication);
+                    case 'delete':
+                      _delete(medication);
+                  }
+                },
                 itemBuilder: (_) => const [
                       PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      PopupMenuItem(
+                        value: 'duplicate',
+                        child: Text('Criar cópia com outra dose'),
+                      ),
                       PopupMenuItem(value: 'delete', child: Text('Excluir')),
                     ]),
       ));
@@ -99,8 +111,42 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
       suggestions: suggestions,
     );
     if (result == null) return;
-    await _repository!.save(result);
+    try {
+      await _repository!.save(result);
+    } on DuplicateMedicationException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Já existe um medicamento com este nome e dose.'),
+        ),
+      );
+      return;
+    }
     await _load();
+  }
+
+  Future<void> _duplicate(Medication medication) async {
+    _repository ??= await LocalMedicationRepository.load();
+    final suggestions = await _repository!.getAll();
+    if (!mounted) return;
+    final result = await showMedicationEditor(
+      context,
+      initial: medication,
+      duplicate: true,
+      suggestions: suggestions,
+    );
+    if (result == null) return;
+    try {
+      await _repository!.save(result);
+      await _load();
+    } on DuplicateMedicationException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Já existe um medicamento com este nome e dose.'),
+        ),
+      );
+    }
   }
 
   Future<void> _delete(Medication medication) async {

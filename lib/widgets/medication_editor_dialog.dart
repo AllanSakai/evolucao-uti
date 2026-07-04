@@ -1,7 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/medication.dart';
-import '../utils/medication_suggestions.dart';
 import '../utils/search_normalizer.dart';
 
 const medicationRoutes = [
@@ -68,12 +69,14 @@ const dispensingSuggestions = [
 Future<Medication?> showMedicationEditor(
   BuildContext context, {
   Medication? initial,
+  bool duplicate = false,
   List<Medication> suggestions = const [],
 }) =>
     showDialog<Medication>(
       context: context,
       builder: (_) => _MedicationEditorDialog(
         initial: initial,
+        duplicate: duplicate,
         suggestions: suggestions,
       ),
     );
@@ -82,8 +85,10 @@ class _MedicationEditorDialog extends StatefulWidget {
   const _MedicationEditorDialog({
     required this.suggestions,
     this.initial,
+    this.duplicate = false,
   });
   final Medication? initial;
+  final bool duplicate;
   final List<Medication> suggestions;
 
   @override
@@ -108,7 +113,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
     super.initState();
     final value = widget.initial;
     _name = TextEditingController(text: value?.name);
-    _dose = TextEditingController(text: value?.dose);
+    _dose = TextEditingController(text: widget.duplicate ? '' : value?.dose);
     _quantity = TextEditingController(text: value?.administeredQuantity);
     _frequency = TextEditingController(text: value?.frequency);
     _dispensing = TextEditingController(text: value?.dispensingQuantity);
@@ -136,8 +141,11 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final title =
-        widget.initial == null ? 'Adicionar medicamento' : 'Editar medicamento';
+    final title = widget.duplicate
+        ? 'Cópia com outra dose'
+        : widget.initial == null
+            ? 'Adicionar medicamento'
+            : 'Editar medicamento';
     final isMobile = MediaQuery.sizeOf(context).width < 600;
 
     if (isMobile) {
@@ -198,7 +206,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
 
   List<Widget> _formFields() => [
         _nameAutocomplete(),
-        _doseAutocomplete(),
+        _doseField(),
         DropdownButtonFormField(
           isExpanded: true,
           initialValue: _presentation,
@@ -257,32 +265,24 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         _field(_notes, 'Observações (opcional)', required: false),
       ];
 
-  Widget _doseAutocomplete() => Padding(
+  Widget _doseField() => Padding(
         padding: const EdgeInsets.only(bottom: 10),
-        child: Autocomplete<String>(
-          key: ValueKey('dose-${_dose.text}'),
-          initialValue: _dose.value,
-          optionsBuilder: (value) => medicationDoseSuggestions(
-            widget.suggestions,
-            _name.text,
-            query: value.text,
-          ),
-          onSelected: (value) => _dose.text = value,
-          fieldViewBuilder: (context, fieldController, focus, submit) {
-            fieldController.addListener(
-              () => _dose.text = fieldController.text,
+        child: TextFormField(
+          controller: _dose,
+          autofocus: widget.duplicate,
+          scrollPadding: const EdgeInsets.only(bottom: 160),
+          decoration: const InputDecoration(labelText: 'Dose'),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) return 'Obrigatório';
+            final duplicate = widget.suggestions.any(
+              (item) =>
+                  (widget.duplicate || item.id != widget.initial?.id) &&
+                  normalizeSearch(item.name) == normalizeSearch(_name.text) &&
+                  normalizeSearch(item.dose) == normalizeSearch(value),
             );
-            return TextFormField(
-              controller: fieldController,
-              focusNode: focus,
-              scrollPadding: const EdgeInsets.only(bottom: 160),
-              decoration: const InputDecoration(
-                labelText: 'Dose',
-                suffixIcon: Icon(Icons.arrow_drop_down),
-              ),
-              validator: (value) =>
-                  value == null || value.trim().isEmpty ? 'Obrigatório' : null,
-            );
+            return duplicate
+                ? 'Já existe um cadastro com este nome e dose'
+                : null;
           },
         ),
       );
@@ -300,6 +300,38 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
             );
           },
           onSelected: _fillFromMedication,
+          optionsViewBuilder: (context, onSelected, options) {
+            final items = options.toList();
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: math.min(
+                    560,
+                    MediaQuery.sizeOf(context).width - 32,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 280),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final medication = items[index];
+                        return ListTile(
+                          title: Text(medication.name),
+                          subtitle: Text(medication.dose),
+                          onTap: () => onSelected(medication),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
           fieldViewBuilder: (context, controller, focus, submit) {
             controller.addListener(() => _name.text = controller.text);
             return TextFormField(
@@ -383,8 +415,9 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
     Navigator.pop(
       context,
       Medication(
-        id: widget.initial?.id ??
-            DateTime.now().microsecondsSinceEpoch.toString(),
+        id: !widget.duplicate && widget.initial != null
+            ? widget.initial!.id
+            : DateTime.now().microsecondsSinceEpoch.toString(),
         name: _name.text.trim(),
         dose: _dose.text.trim(),
         presentation: _presentation,

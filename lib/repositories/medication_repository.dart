@@ -44,6 +44,15 @@ class LocalMedicationRepository implements MedicationRepository {
   @override
   Future<void> save(Medication medication) async {
     final medications = await getAll();
+    final duplicate = medications.any(
+      (item) =>
+          item.id != medication.id &&
+          normalizeSearch(item.name) == normalizeSearch(medication.name) &&
+          normalizeSearch(item.dose) == normalizeSearch(medication.dose),
+    );
+    if (duplicate) {
+      throw const DuplicateMedicationException();
+    }
     final index = medications.indexWhere((item) => item.id == medication.id);
     if (index < 0) {
       medications.add(medication);
@@ -141,4 +150,11 @@ class LocalMedicationRepository implements MedicationRepository {
       dispensingQuantity: '01 caixa',
     ),
   ];
+}
+
+class DuplicateMedicationException implements Exception {
+  const DuplicateMedicationException();
+
+  @override
+  String toString() => 'Já existe um medicamento com este nome e dose.';
 }

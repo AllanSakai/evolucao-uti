@@ -113,4 +113,23 @@ void main() {
       ['3,125 mg', '6,25 mg', '12,5 mg', '25 mg'],
     );
   });
+
+  test('banco bloqueia nome e dose duplicados, mas aceita outra dose',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final repository = await LocalMedicationRepository.load();
+    final carvedilol =
+        (await repository.search('Carvedilol')).first.copyWith(id: 'novo-id');
+
+    await expectLater(
+      repository.save(carvedilol),
+      throwsA(isA<DuplicateMedicationException>()),
+    );
+
+    await repository.save(carvedilol.copyWith(dose: '50 mg'));
+    expect(
+      (await repository.search('Carvedilol')).map((item) => item.dose),
+      contains('50 mg'),
+    );
+  });
 }
