@@ -119,7 +119,8 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
     setState(() => _items.add(medication));
     final matches = await repository.search(medication.name);
     final exists = matches.any((item) =>
-        normalizeSearch(item.name) == normalizeSearch(medication.name));
+        normalizeSearch(item.name) == normalizeSearch(medication.name) &&
+        normalizeSearch(item.dose) == normalizeSearch(medication.dose));
     if (!exists && mounted) {
       final save = await showDialog<bool>(
           context: context,

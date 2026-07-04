@@ -1,8 +1,39 @@
+import 'package:evolucao_uti/models/medication.dart';
+import 'package:evolucao_uti/utils/medication_suggestions.dart';
 import 'package:evolucao_uti/widgets/medication_editor_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('sugere todas as doses cadastradas para o mesmo medicamento', () {
+    const base = Medication(
+      id: '1',
+      name: 'Carvedilol',
+      dose: '3,125 mg',
+      presentation: MedicationPresentation.tablet,
+      useType: MedicationUseType.internal,
+      route: 'Via oral',
+      administeredQuantity: '1 comprimido',
+      frequency: 'Duas vezes ao dia',
+      dispensingQuantity: '01 caixa',
+    );
+    final medications = [
+      base,
+      base.copyWith(id: '2', dose: '6,25 mg'),
+      base.copyWith(id: '3', dose: '12,5 mg'),
+      base.copyWith(id: '4', name: 'Outro medicamento', dose: '20 mg'),
+    ];
+
+    expect(
+      medicationDoseSuggestions(medications, '  CARVEDILOL '),
+      ['3,125 mg', '6,25 mg', '12,5 mg'],
+    );
+    expect(
+      medicationDoseSuggestions(medications, 'Carvedilol', query: '6,'),
+      ['6,25 mg'],
+    );
+  });
+
   test('quantidades administradas incluem opções inalatórias', () {
     expect(
       inhaledQuantitySuggestions,

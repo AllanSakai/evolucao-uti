@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/medication.dart';
+import '../utils/medication_suggestions.dart';
 import '../utils/search_normalizer.dart';
 
 const medicationRoutes = [
@@ -196,7 +197,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
 
   List<Widget> _formFields() => [
         _nameAutocomplete(),
-        _field(_dose, 'Dose'),
+        _doseAutocomplete(),
         DropdownButtonFormField(
           isExpanded: true,
           initialValue: _presentation,
@@ -254,6 +255,36 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         ),
         _field(_notes, 'Observações (opcional)', required: false),
       ];
+
+  Widget _doseAutocomplete() => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Autocomplete<String>(
+          key: ValueKey('dose-${_dose.text}'),
+          initialValue: _dose.value,
+          optionsBuilder: (value) => medicationDoseSuggestions(
+            widget.suggestions,
+            _name.text,
+            query: value.text,
+          ),
+          onSelected: (value) => _dose.text = value,
+          fieldViewBuilder: (context, fieldController, focus, submit) {
+            fieldController.addListener(
+              () => _dose.text = fieldController.text,
+            );
+            return TextFormField(
+              controller: fieldController,
+              focusNode: focus,
+              scrollPadding: const EdgeInsets.only(bottom: 160),
+              decoration: const InputDecoration(
+                labelText: 'Dose',
+                suffixIcon: Icon(Icons.arrow_drop_down),
+              ),
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Obrigatório' : null,
+            );
+          },
+        ),
+      );
 
   Widget _nameAutocomplete() => Padding(
         padding: const EdgeInsets.only(bottom: 10),
@@ -323,6 +354,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: Autocomplete<String>(
+          key: ValueKey('$label-${controller.text}'),
           initialValue: controller.value,
           optionsBuilder: (value) => suggestions.where(
               (item) => item.toLowerCase().contains(value.text.toLowerCase())),
