@@ -103,6 +103,10 @@ void main() {
     expect(all.any((item) => item.id == custom.id), isTrue);
     expect(all.length, greaterThan(50));
     expect(
+      all.indexWhere((item) => item.name == 'Ácido acetilsalicílico'),
+      lessThan(all.indexWhere((item) => item.name == 'Amiodarona')),
+    );
+    expect(
       commonMedicationCatalog
           .where((item) => item.name == 'Carvedilol')
           .map((item) => item.dose),

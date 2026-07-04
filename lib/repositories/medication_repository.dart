@@ -35,7 +35,10 @@ class LocalMedicationRepository implements MedicationRepository {
             )
             .toList();
     await _mergeCatalog(medications);
-    return medications..sort((a, b) => a.name.compareTo(b.name));
+    return medications
+      ..sort(
+        (a, b) => normalizeSearch(a.name).compareTo(normalizeSearch(b.name)),
+      );
   }
 
   @override
