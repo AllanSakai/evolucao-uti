@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('quantidades administradas incluem opções inalatórias', () {
+    expect(
+      administeredQuantitySuggestions,
+      containsAll(['1 puff', '2 puffs', '3 puffs', '4 puffs']),
+    );
+  });
+
   testWidgets('editor usa tela cheia rolável em celulares', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);

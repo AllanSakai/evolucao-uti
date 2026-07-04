@@ -27,6 +27,10 @@ const administeredQuantitySuggestions = [
   '2 cápsulas',
   '1 ampola',
   '1 sachê',
+  '1 puff',
+  '2 puffs',
+  '3 puffs',
+  '4 puffs',
 ];
 const frequencySuggestions = [
   'Uma vez ao dia',
