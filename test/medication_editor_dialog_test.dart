@@ -52,6 +52,59 @@ void main() {
     expect(find.text('12,5 mg'), findsOneWidget);
   });
 
+  testWidgets(
+      'modo prescrição aceita ajustes sem validar duplicidade do cadastro',
+      (tester) async {
+    const saved = Medication(
+      id: 'saved',
+      name: 'Carvedilol',
+      dose: '3,125 mg',
+      presentation: MedicationPresentation.tablet,
+      useType: MedicationUseType.internal,
+      route: 'Via oral',
+      administeredQuantity: '1 comprimido',
+      frequency: 'Duas vezes ao dia',
+      dispensingQuantity: '',
+    );
+    Medication? result;
+    var selectedFromAutocomplete = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              onPressed: () async {
+                result = await showMedicationEditor(
+                  context,
+                  suggestions: const [saved],
+                  enforceUniqueRegistration: false,
+                  defaultDispensingQuantity: 'Contínuo',
+                  onSuggestionSelected: (_) {
+                    selectedFromAutocomplete = true;
+                  },
+                );
+              },
+              child: const Text('Adicionar'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Adicionar'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Carv');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3,125 mg'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    expect(selectedFromAutocomplete, isTrue);
+    expect(result, isNotNull);
+    expect(result!.dispensingQuantity, 'Contínuo');
+  });
+
   test('quantidades administradas incluem opções inalatórias', () {
     expect(
       inhaledQuantitySuggestions,

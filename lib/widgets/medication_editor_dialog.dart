@@ -70,6 +70,9 @@ Future<Medication?> showMedicationEditor(
   BuildContext context, {
   Medication? initial,
   bool duplicate = false,
+  bool enforceUniqueRegistration = true,
+  String defaultDispensingQuantity = '',
+  ValueChanged<Medication>? onSuggestionSelected,
   List<Medication> suggestions = const [],
 }) =>
     showDialog<Medication>(
@@ -77,6 +80,9 @@ Future<Medication?> showMedicationEditor(
       builder: (_) => _MedicationEditorDialog(
         initial: initial,
         duplicate: duplicate,
+        enforceUniqueRegistration: enforceUniqueRegistration,
+        defaultDispensingQuantity: defaultDispensingQuantity,
+        onSuggestionSelected: onSuggestionSelected,
         suggestions: suggestions,
       ),
     );
@@ -86,9 +92,15 @@ class _MedicationEditorDialog extends StatefulWidget {
     required this.suggestions,
     this.initial,
     this.duplicate = false,
+    this.enforceUniqueRegistration = true,
+    this.defaultDispensingQuantity = '',
+    this.onSuggestionSelected,
   });
   final Medication? initial;
   final bool duplicate;
+  final bool enforceUniqueRegistration;
+  final String defaultDispensingQuantity;
+  final ValueChanged<Medication>? onSuggestionSelected;
   final List<Medication> suggestions;
 
   @override
@@ -116,7 +128,11 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
     _dose = TextEditingController(text: widget.duplicate ? '' : value?.dose);
     _quantity = TextEditingController(text: value?.administeredQuantity);
     _frequency = TextEditingController(text: value?.frequency);
-    _dispensing = TextEditingController(text: value?.dispensingQuantity);
+    _dispensing = TextEditingController(
+      text: value?.dispensingQuantity.isNotEmpty == true
+          ? value!.dispensingQuantity
+          : widget.defaultDispensingQuantity,
+    );
     _notes = TextEditingController(text: value?.notes);
     _presentation = value?.presentation ?? MedicationPresentation.tablet;
     _useType = value?.useType ?? MedicationUseType.internal;
@@ -274,6 +290,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
           decoration: const InputDecoration(labelText: 'Dose'),
           validator: (value) {
             if (value == null || value.trim().isEmpty) return 'Obrigatório';
+            if (!widget.enforceUniqueRegistration) return null;
             final duplicate = widget.suggestions.any(
               (item) =>
                   (widget.duplicate || item.id != widget.initial?.id) &&
@@ -348,11 +365,14 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
       );
 
   void _fillFromMedication(Medication medication) {
+    widget.onSuggestionSelected?.call(medication);
     _name.text = medication.name;
     _dose.text = medication.dose;
     _quantity.text = medication.administeredQuantity;
     _frequency.text = medication.frequency;
-    _dispensing.text = medication.dispensingQuantity;
+    _dispensing.text = medication.dispensingQuantity.trim().isEmpty
+        ? widget.defaultDispensingQuantity
+        : medication.dispensingQuantity;
     _notes.text = medication.notes;
     setState(() {
       _presentation = medication.presentation;

@@ -113,10 +113,17 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
     final repository = await LocalMedicationRepository.load();
     final suggestions = await repository.getAll();
     if (!mounted) return;
-    final medication =
-        await showMedicationEditor(context, suggestions: suggestions);
+    var selectedFromAutocomplete = false;
+    final medication = await showMedicationEditor(
+      context,
+      suggestions: suggestions,
+      enforceUniqueRegistration: false,
+      defaultDispensingQuantity: 'Contínuo',
+      onSuggestionSelected: (_) => selectedFromAutocomplete = true,
+    );
     if (medication == null) return;
     setState(() => _items.add(medication));
+    if (selectedFromAutocomplete) return;
     final matches = await repository.search(medication.name);
     final exists = matches.any((item) =>
         normalizeSearch(item.name) == normalizeSearch(medication.name) &&
@@ -148,6 +155,8 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
       context,
       initial: _items[index],
       suggestions: suggestions,
+      enforceUniqueRegistration: false,
+      defaultDispensingQuantity: 'Contínuo',
     );
     if (medication != null) setState(() => _items[index] = medication);
   }
@@ -157,8 +166,16 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
         MaterialPageRoute(
             builder: (_) => const MedicationsScreen(selectionMode: true)));
     if (medication != null) {
-      setState(() => _items.add(medication.copyWith(
-          id: '${medication.id}-${DateTime.now().microsecondsSinceEpoch}')));
+      setState(
+        () => _items.add(
+          medication.copyWith(
+            id: '${medication.id}-${DateTime.now().microsecondsSinceEpoch}',
+            dispensingQuantity: medication.dispensingQuantity.trim().isEmpty
+                ? 'Contínuo'
+                : medication.dispensingQuantity,
+          ),
+        ),
+      );
     }
   }
 
