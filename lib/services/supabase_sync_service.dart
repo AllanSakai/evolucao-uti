@@ -86,6 +86,7 @@ class SupabaseSyncService {
       'frequency': medication.frequency,
       'dispensing_quantity': medication.dispensingQuantity,
       'notes': medication.notes,
+      'usage_tips': medication.usageTips,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'user_id,medication_id');
   }
@@ -118,6 +119,7 @@ class SupabaseSyncService {
       'user_id': userId,
       'protocol_id': protocol.id,
       'name': protocol.name,
+      'usage_tips': protocol.usageTips,
       'medications': protocol.medications.map((item) => item.toJson()).toList(),
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'user_id,protocol_id');
@@ -148,12 +150,14 @@ class SupabaseSyncService {
         frequency: json['frequency'] as String? ?? '',
         dispensingQuantity: json['dispensing_quantity'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        usageTips: json['usage_tips'] as String? ?? '',
       );
 
   PrescriptionProtocol _protocolFromRemote(Map<String, dynamic> json) =>
       PrescriptionProtocol(
         id: json['protocol_id'] as String,
         name: json['name'] as String? ?? '',
+        usageTips: json['usage_tips'] as String? ?? '',
         medications: (json['medications'] as List? ?? const [])
             .map(
               (item) =>

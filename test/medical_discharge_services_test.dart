@@ -61,6 +61,20 @@ void main() {
         hasLength(1));
   });
 
+  test('receita nao imprime dicas de uso internas', () {
+    final service = PrescriptionService();
+    final medication = service.utiTemplate().first.copyWith(
+          notes: 'tomar com agua',
+          usageTips: 'Ajustar dose conforme funcao renal.',
+        );
+    final text = service.generate(Prescription(items: [
+      PrescriptionItem(medication: medication),
+    ]));
+
+    expect(text, contains('tomar com agua'));
+    expect(text, isNot(contains('Ajustar dose conforme funcao renal')));
+  });
+
   test('pesquisa normalizada ignora acentos, caixa e espaços extras', () {
     expect(normalizeSearch('  DIPIRÓNA  '), 'dipirona');
     expect(normalizeSearch('Dipi  rona'), 'dipi rona');

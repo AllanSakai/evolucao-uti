@@ -212,18 +212,21 @@ class _ProtocolEditorScreen extends StatefulWidget {
 
 class _ProtocolEditorScreenState extends State<_ProtocolEditorScreen> {
   late final TextEditingController _name;
+  late final TextEditingController _usageTips;
   late final List<Medication> _medications;
 
   @override
   void initState() {
     super.initState();
     _name = TextEditingController(text: widget.initial?.name);
+    _usageTips = TextEditingController(text: widget.initial?.usageTips);
     _medications = [...?widget.initial?.medications];
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _usageTips.dispose();
     super.dispose();
   }
 
@@ -251,6 +254,16 @@ class _ProtocolEditorScreenState extends State<_ProtocolEditorScreen> {
                   textCapitalization: TextCapitalization.sentences,
                   decoration:
                       const InputDecoration(labelText: 'Nome do protocolo'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _usageTips,
+                  minLines: 3,
+                  maxLines: 8,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Dicas de uso (visível só para você)',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(
@@ -357,6 +370,7 @@ class _ProtocolEditorScreenState extends State<_ProtocolEditorScreen> {
             DateTime.now().microsecondsSinceEpoch.toString(),
         name: name,
         medications: List.unmodifiable(_medications),
+        usageTips: _usageTips.text.trim(),
       ),
     );
   }

@@ -197,8 +197,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
         context: context,
         builder: (_) => AlertDialog(
                 title: const Text('Excluir medicamento?'),
-                content:
-                    Text('${medication.name} será removido do banco local.'),
+                content: Text('${medication.name} será removido do seu banco.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context, false),

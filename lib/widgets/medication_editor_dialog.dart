@@ -116,6 +116,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
   late final TextEditingController _frequency;
   late final TextEditingController _dispensing;
   late final TextEditingController _notes;
+  late final TextEditingController _usageTips;
   late MedicationPresentation _presentation;
   late MedicationUseType _useType;
   late String _route;
@@ -134,6 +135,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
           : widget.defaultDispensingQuantity,
     );
     _notes = TextEditingController(text: value?.notes);
+    _usageTips = TextEditingController(text: value?.usageTips);
     _presentation = value?.presentation ?? MedicationPresentation.tablet;
     _useType = value?.useType ?? MedicationUseType.internal;
     _route =
@@ -148,7 +150,8 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
       _quantity,
       _frequency,
       _dispensing,
-      _notes
+      _notes,
+      _usageTips
     ]) {
       controller.dispose();
     }
@@ -279,6 +282,13 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
           dispensingSuggestions,
         ),
         _field(_notes, 'Observações (opcional)', required: false),
+        _field(
+          _usageTips,
+          'Dicas de uso (visível só para você)',
+          required: false,
+          minLines: 3,
+          maxLines: 8,
+        ),
       ];
 
   Widget _doseField() => Padding(
@@ -374,6 +384,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         ? widget.defaultDispensingQuantity
         : medication.dispensingQuantity;
     _notes.text = medication.notes;
+    _usageTips.text = medication.usageTips;
     setState(() {
       _presentation = medication.presentation;
       _useType = medication.useType;
@@ -383,14 +394,21 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
     });
   }
 
-  Widget _field(TextEditingController controller, String label,
-          {bool required = true}) =>
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool required = true,
+    int minLines = 1,
+    int maxLines = 1,
+  }) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: TextFormField(
           controller: controller,
           scrollPadding: const EdgeInsets.only(bottom: 160),
           textCapitalization: TextCapitalization.sentences,
+          minLines: minLines,
+          maxLines: maxLines,
           decoration: InputDecoration(labelText: label),
           validator: required
               ? (value) =>
@@ -447,6 +465,7 @@ class _MedicationEditorDialogState extends State<_MedicationEditorDialog> {
         frequency: _frequency.text.trim(),
         dispensingQuantity: _dispensing.text.trim(),
         notes: _notes.text.trim(),
+        usageTips: _usageTips.text.trim(),
       ),
     );
   }

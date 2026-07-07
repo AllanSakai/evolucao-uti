@@ -36,6 +36,7 @@ class Medication {
     required this.frequency,
     required this.dispensingQuantity,
     this.notes = '',
+    this.usageTips = '',
   });
 
   final String id;
@@ -48,6 +49,7 @@ class Medication {
   final String frequency;
   final String dispensingQuantity;
   final String notes;
+  final String usageTips;
 
   Medication copyWith({
     String? id,
@@ -60,6 +62,7 @@ class Medication {
     String? frequency,
     String? dispensingQuantity,
     String? notes,
+    String? usageTips,
   }) =>
       Medication(
         id: id ?? this.id,
@@ -72,6 +75,7 @@ class Medication {
         frequency: frequency ?? this.frequency,
         dispensingQuantity: dispensingQuantity ?? this.dispensingQuantity,
         notes: notes ?? this.notes,
+        usageTips: usageTips ?? this.usageTips,
       );
 
   Map<String, dynamic> toJson() => {
@@ -85,6 +89,7 @@ class Medication {
         'frequency': frequency,
         'dispensingQuantity': dispensingQuantity,
         'notes': notes,
+        'usageTips': usageTips,
       };
 
   factory Medication.fromJson(Map<String, dynamic> json) => Medication(
@@ -104,5 +109,6 @@ class Medication {
         frequency: json['frequency'] as String? ?? '',
         dispensingQuantity: json['dispensingQuantity'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        usageTips: json['usageTips'] as String? ?? '',
       );
 }

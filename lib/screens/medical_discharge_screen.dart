@@ -41,7 +41,7 @@ class MedicalDischargeScreen extends StatelessWidget {
                 const _Tile(
                   icon: Icons.inventory_2_outlined,
                   title: 'Medicamentos',
-                  subtitle: 'Pesquise e gerencie o banco local.',
+                  subtitle: 'Pesquise e gerencie seus medicamentos.',
                   screen: MedicationsScreen(),
                 ),
                 const _Tile(
