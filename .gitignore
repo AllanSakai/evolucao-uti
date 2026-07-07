@@ -5,6 +5,7 @@
 build/
 coverage/
 tmp/
+supabase/.temp/
 .idea/
 .env
 .env.*
