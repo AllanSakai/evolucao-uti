@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/bed.dart';
 import '../models/icu_unit.dart';
 import '../services/shift_round_store.dart';
-import '../widgets/medical_disclaimer.dart';
 import 'shift_round_screen.dart';
 
 class BedSelectionScreen extends StatefulWidget {
@@ -44,8 +43,6 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const MedicalDisclaimer(),
-                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(

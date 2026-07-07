@@ -5,7 +5,6 @@ import '../models/bed.dart';
 import '../models/evolution_data.dart';
 import '../utils/drug_options.dart';
 import '../widgets/form_section.dart';
-import '../widgets/medical_disclaimer.dart';
 import 'evolution_preview_screen.dart';
 
 class EvolutionFormScreen extends StatefulWidget {
@@ -238,8 +237,6 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
-                const MedicalDisclaimer(),
-                const SizedBox(height: 12),
                 if (widget.bed != null) _bedHeader(context),
                 _generateButton(),
                 const SizedBox(height: 12),

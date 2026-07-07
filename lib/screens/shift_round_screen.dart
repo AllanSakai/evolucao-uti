@@ -6,7 +6,6 @@ import '../models/selected_bed.dart';
 import '../services/evolution_generator.dart';
 import '../services/shift_round_store.dart';
 import '../services/supabase_sync_service.dart';
-import '../widgets/medical_disclaimer.dart';
 import 'account_screen.dart';
 import 'evolution_form_screen.dart';
 import 'evolution_preview_screen.dart';
@@ -77,8 +76,6 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const MedicalDisclaimer(),
-                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(

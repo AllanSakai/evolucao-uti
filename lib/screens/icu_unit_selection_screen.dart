@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../data/icu_units_data.dart';
 import '../models/icu_unit.dart';
 import '../services/shift_round_store.dart';
-import '../widgets/medical_disclaimer.dart';
 import 'account_screen.dart';
 import 'medical_discharge_screen.dart';
 import 'shift_round_screen.dart';
@@ -33,8 +32,6 @@ class IcuUnitSelectionScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const MedicalDisclaimer(),
-                const SizedBox(height: 20),
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: ListTile(

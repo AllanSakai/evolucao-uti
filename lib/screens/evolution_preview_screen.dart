@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../models/bed.dart';
 import '../models/evolution_data.dart';
 import '../services/evolution_generator.dart';
-import '../widgets/medical_disclaimer.dart';
 
 class EvolutionPreviewScreen extends StatefulWidget {
   const EvolutionPreviewScreen({
@@ -58,9 +57,7 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const MedicalDisclaimer(),
                 if (widget.bed != null) ...[
-                  const SizedBox(height: 12),
                   Text(widget.bed!.displayName,
                       style: Theme.of(context).textTheme.titleLarge),
                 ],
