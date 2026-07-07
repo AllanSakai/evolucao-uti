@@ -66,4 +66,22 @@ void main() {
     store.markCompleted('A-1');
     expect(store.getById('A-1').status, BedProgressStatus.completed);
   });
+
+  test('novo dia volta concluido para pendente sem apagar dados', () {
+    var now = DateTime(2026, 7, 6, 22);
+    final store = InMemoryShiftRoundStore(now: () => now);
+    store.startVisit([unitA.beds.first]);
+    store.saveDraft(
+      'A-1',
+      const EvolutionData(sex: Sex.masculino, notes: 'Dados mantidos'),
+    );
+    store.markCompleted('A-1');
+    expect(store.getById('A-1').status, BedProgressStatus.completed);
+
+    now = DateTime(2026, 7, 7, 7);
+    store.startVisit([unitA.beds.first]);
+
+    expect(store.getById('A-1').status, BedProgressStatus.pending);
+    expect(store.getById('A-1').evolutionData!.notes, 'Dados mantidos');
+  });
 }

@@ -21,6 +21,10 @@ abstract interface class ShiftRoundStore extends ChangeNotifier {
 
 class InMemoryShiftRoundStore extends ChangeNotifier
     implements ShiftRoundStore {
+  InMemoryShiftRoundStore({DateTime Function()? now})
+      : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
   final Map<String, SelectedBed> _beds = {};
 
   @override
@@ -30,6 +34,7 @@ class InMemoryShiftRoundStore extends ChangeNotifier
   void startVisit(List<Bed> selectedBeds) {
     for (final bed in selectedBeds) {
       _beds.putIfAbsent(bed.id, () => SelectedBed(bed: bed));
+      _resetCompletedFromPreviousDay(_beds[bed.id]!);
     }
     _beds.removeWhere((id, _) => !selectedBeds.any((bed) => bed.id == id));
     notifyListeners();
@@ -44,6 +49,7 @@ class InMemoryShiftRoundStore extends ChangeNotifier
     selected.evolutionData = data;
     if (selected.status != BedProgressStatus.completed) {
       selected.status = BedProgressStatus.inProgress;
+      selected.statusDate = _todayKey();
     }
     notifyListeners();
   }
@@ -53,8 +59,17 @@ class InMemoryShiftRoundStore extends ChangeNotifier
     final selected = getById(bedId);
     if (selected.evolutionData == null) return;
     selected.status = BedProgressStatus.completed;
+    selected.statusDate = _todayKey();
     notifyListeners();
   }
+
+  void _resetCompletedFromPreviousDay(SelectedBed selected) {
+    if (selected.status != BedProgressStatus.completed) return;
+    if (selected.statusDate == _todayKey()) return;
+    selected.status = BedProgressStatus.pending;
+  }
+
+  String _todayKey() => _dateKey(_now());
 
   @override
   Future<int> syncFromRemote(List<Bed> unitBeds) async => 0;
@@ -68,10 +83,15 @@ class InMemoryShiftRoundStore extends ChangeNotifier
 
 class PersistentShiftRoundStore extends ChangeNotifier
     implements ShiftRoundStore {
-  PersistentShiftRoundStore._(this.unitCode, this._preferences);
+  PersistentShiftRoundStore._(
+    this.unitCode,
+    this._preferences, {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
 
   final String unitCode;
   final SharedPreferences _preferences;
+  final DateTime Function() _now;
   final Map<String, SelectedBed> _beds = {};
   final _sync = SupabaseSyncService.instance;
 
@@ -108,9 +128,12 @@ class PersistentShiftRoundStore extends ChangeNotifier
               bed: bed,
               evolutionData: savedBed.evolutionData,
               status: savedBed.status,
+              statusDate: savedBed.statusDate,
             );
+      _resetCompletedFromPreviousDay(_beds[bed.id]!);
     }
     _beds.removeWhere((id, _) => !selectedBeds.any((bed) => bed.id == id));
+    _persist();
     notifyListeners();
   }
 
@@ -127,7 +150,10 @@ class PersistentShiftRoundStore extends ChangeNotifier
         bed: bed,
         evolutionData: remote.evolutionData,
         status: remote.status,
+        statusDate:
+            remote.updatedAt == null ? null : _dateKey(remote.updatedAt!),
       );
+      _resetCompletedFromPreviousDay(_beds[remote.bedId]!);
     }
 
     for (final selected in _beds.values) {
@@ -154,6 +180,7 @@ class PersistentShiftRoundStore extends ChangeNotifier
     selected.evolutionData = data;
     if (selected.status != BedProgressStatus.completed) {
       selected.status = BedProgressStatus.inProgress;
+      selected.statusDate = _todayKey();
     }
     _persist();
     unawaited(_sync
@@ -171,6 +198,7 @@ class PersistentShiftRoundStore extends ChangeNotifier
     final selected = getById(bedId);
     if (selected.evolutionData == null) return;
     selected.status = BedProgressStatus.completed;
+    selected.statusDate = _todayKey();
     _persist();
     unawaited(_sync
         .upsertBed(
@@ -207,6 +235,7 @@ class PersistentShiftRoundStore extends ChangeNotifier
             isIsolation: entry['isIsolation'] as bool? ?? false,
           ),
           status: _statusFromName(entry['status'] as String?),
+          statusDate: entry['statusDate'] as String?,
           evolutionData: entry['evolutionData'] == null
               ? null
               : EvolutionData.fromJson(
@@ -222,10 +251,19 @@ class PersistentShiftRoundStore extends ChangeNotifier
           'label': selected.bed.label,
           'isIsolation': selected.bed.isIsolation,
           'status': selected.status.name,
+          'statusDate': selected.statusDate,
           'evolutionData': selected.evolutionData?.toJson(),
         }));
     _preferences.setString(_key(unitCode), jsonEncode(payload));
   }
+
+  void _resetCompletedFromPreviousDay(SelectedBed selected) {
+    if (selected.status != BedProgressStatus.completed) return;
+    if (selected.statusDate == _todayKey()) return;
+    selected.status = BedProgressStatus.pending;
+  }
+
+  String _todayKey() => _dateKey(_now());
 
   static String _key(String unitCode) => 'evolucao_uti_round_$unitCode';
 
@@ -235,4 +273,11 @@ class PersistentShiftRoundStore extends ChangeNotifier
     }
     return BedProgressStatus.pending;
   }
+}
+
+String _dateKey(DateTime date) {
+  final local = date.toLocal();
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '${local.year}-$month-$day';
 }

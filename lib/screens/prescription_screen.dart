@@ -113,28 +113,33 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
     final repository = await LocalMedicationRepository.load();
     final suggestions = await repository.getAll();
     if (!mounted) return;
-    var selectedFromAutocomplete = false;
+    Medication? selectedFromAutocomplete;
     final medication = await showMedicationEditor(
       context,
       suggestions: suggestions,
       enforceUniqueRegistration: false,
       defaultDispensingQuantity: 'Contínuo',
-      onSuggestionSelected: (_) => selectedFromAutocomplete = true,
+      onSuggestionSelected: (value) => selectedFromAutocomplete = value,
     );
     if (medication == null) return;
     setState(() => _items.add(medication));
-    if (selectedFromAutocomplete) return;
     final matches = await repository.search(medication.name);
     final exists = matches.any((item) =>
         normalizeSearch(item.name) == normalizeSearch(medication.name) &&
         normalizeSearch(item.dose) == normalizeSearch(medication.dose));
     if (!exists && mounted) {
+      final base = selectedFromAutocomplete;
+      final isNewDose = base != null &&
+          normalizeSearch(base.name) == normalizeSearch(medication.name) &&
+          normalizeSearch(base.dose) != normalizeSearch(medication.dose);
       final save = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-                  title: const Text('Salvar medicamento?'),
-                  content: const Text(
-                      'Deseja salvar este medicamento para uso futuro?'),
+                  title: Text(
+                      isNewDose ? 'Salvar nova dose?' : 'Salvar medicamento?'),
+                  content: Text(isNewDose
+                      ? 'Deseja salvar ${medication.dose} como nova dose de ${medication.name} para uso futuro?'
+                      : 'Deseja salvar este medicamento para uso futuro?'),
                   actions: [
                     TextButton(
                         onPressed: () => Navigator.pop(context, false),
@@ -143,7 +148,13 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
                         onPressed: () => Navigator.pop(context, true),
                         child: const Text('Salvar')),
                   ]));
-      if (save == true) await repository.save(medication);
+      if (save == true) {
+        try {
+          await repository.save(medication);
+        } on DuplicateMedicationException {
+          // Outro cadastro igual pode ter sido salvo enquanto a receita estava aberta.
+        }
+      }
     }
   }
 

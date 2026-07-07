@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/common_medications_data.dart';
 import '../models/medication.dart';
+import '../services/supabase_sync_service.dart';
 import '../utils/search_normalizer.dart';
 
 abstract interface class MedicationRepository {
@@ -16,6 +18,8 @@ abstract interface class MedicationRepository {
 class LocalMedicationRepository implements MedicationRepository {
   LocalMedicationRepository(this._preferences);
   final SharedPreferences _preferences;
+  final _sync = SupabaseSyncService.instance;
+  bool _syncedRemote = false;
   static const _key = 'medical_discharge_medications';
   static const _catalogVersionKey = 'medical_discharge_catalog_version';
   static const _catalogVersion = 1;
@@ -23,18 +27,22 @@ class LocalMedicationRepository implements MedicationRepository {
   static Future<LocalMedicationRepository> load() async =>
       LocalMedicationRepository(await SharedPreferences.getInstance());
 
+  Future<List<Medication>> syncNow() async {
+    _syncedRemote = false;
+    var medications = _readLocal();
+    await _mergeCatalog(medications);
+    medications = await _syncRemoteOnce(medications, rethrowErrors: true);
+    return medications
+      ..sort(
+        (a, b) => normalizeSearch(a.name).compareTo(normalizeSearch(b.name)),
+      );
+  }
+
   @override
   Future<List<Medication>> getAll() async {
-    final raw = _preferences.getString(_key);
-    final medications = raw == null
-        ? <Medication>[]
-        : (jsonDecode(raw) as List)
-            .map(
-              (item) =>
-                  Medication.fromJson((item as Map).cast<String, dynamic>()),
-            )
-            .toList();
+    var medications = _readLocal();
     await _mergeCatalog(medications);
+    medications = await _syncRemoteOnce(medications);
     return medications
       ..sort(
         (a, b) => normalizeSearch(a.name).compareTo(normalizeSearch(b.name)),
@@ -60,6 +68,13 @@ class LocalMedicationRepository implements MedicationRepository {
       medications[index] = medication;
     }
     await _write(medications);
+    if (_isUserMedication(medication)) {
+      try {
+        await _sync.upsertMedication(medication);
+      } catch (error) {
+        debugPrint('Falha ao sincronizar medicamento: $error');
+      }
+    }
   }
 
   @override
@@ -67,6 +82,11 @@ class LocalMedicationRepository implements MedicationRepository {
     final medications = await getAll()
       ..removeWhere((item) => item.id == id);
     await _write(medications);
+    try {
+      await _sync.deleteMedication(id);
+    } catch (error) {
+      debugPrint('Falha ao apagar medicamento sincronizado: $error');
+    }
   }
 
   @override
@@ -83,6 +103,59 @@ class LocalMedicationRepository implements MedicationRepository {
         _key,
         jsonEncode(medications.map((item) => item.toJson()).toList()),
       );
+
+  List<Medication> _readLocal() {
+    final raw = _preferences.getString(_key);
+    if (raw == null) return <Medication>[];
+    return (jsonDecode(raw) as List)
+        .map(
+          (item) => Medication.fromJson((item as Map).cast<String, dynamic>()),
+        )
+        .toList();
+  }
+
+  Future<List<Medication>> _syncRemoteOnce(
+    List<Medication> medications, {
+    bool rethrowErrors = false,
+  }) async {
+    if (_syncedRemote || !_sync.canSync) return medications;
+    _syncedRemote = true;
+    try {
+      final remote = await _sync.fetchMedications();
+      final merged = [...medications];
+      for (final medication in remote) {
+        final index = merged.indexWhere((item) => item.id == medication.id);
+        if (index >= 0) {
+          merged[index] = medication;
+          continue;
+        }
+        final sameNameAndDose = merged.any(
+          (item) =>
+              normalizeSearch(item.name) == normalizeSearch(medication.name) &&
+              normalizeSearch(item.dose) == normalizeSearch(medication.dose),
+        );
+        if (!sameNameAndDose) merged.add(medication);
+      }
+
+      for (final medication in merged.where(_isUserMedication)) {
+        final alreadyRemote = remote.any(
+          (item) =>
+              item.id == medication.id ||
+              (normalizeSearch(item.name) == normalizeSearch(medication.name) &&
+                  normalizeSearch(item.dose) ==
+                      normalizeSearch(medication.dose)),
+        );
+        if (!alreadyRemote) await _sync.upsertMedication(medication);
+      }
+
+      await _write(merged);
+      return merged;
+    } catch (error) {
+      debugPrint('Falha ao sincronizar medicamentos: $error');
+      if (rethrowErrors) rethrow;
+      return medications;
+    }
+  }
 
   Future<void> _mergeCatalog(List<Medication> medications) async {
     final installedVersion = _preferences.getInt(_catalogVersionKey) ?? 0;
@@ -150,6 +223,10 @@ class LocalMedicationRepository implements MedicationRepository {
       dispensingQuantity: '01 caixa',
     ),
   ];
+
+  static bool _isUserMedication(Medication medication) =>
+      !medication.id.startsWith('default-') &&
+      !medication.id.startsWith('catalog-');
 }
 
 class DuplicateMedicationException implements Exception {

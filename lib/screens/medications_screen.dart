@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/medication.dart';
 import '../repositories/medication_repository.dart';
+import '../services/supabase_sync_service.dart';
 import '../widgets/medication_editor_dialog.dart';
 
 class MedicationsScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
   LocalMedicationRepository? _repository;
   List<Medication> _medications = [];
   final _search = TextEditingController();
+  bool _syncing = false;
 
   @override
   void initState() {
@@ -33,11 +35,52 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _syncMedications() async {
+    final sync = SupabaseSyncService.instance;
+    if (!sync.canSync) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Entre na mesma conta no celular e no computador.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _syncing = true);
+    try {
+      _repository ??= await LocalMedicationRepository.load();
+      await _repository!.syncNow();
+      _medications = await _repository!.search(_search.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Medicamentos sincronizados.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Falha ao sincronizar medicamentos: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
             title: Text(
-                widget.selectionMode ? 'Adicionar do banco' : 'Medicamentos')),
+                widget.selectionMode ? 'Adicionar do banco' : 'Medicamentos'),
+            actions: [
+              IconButton(
+                tooltip: 'Sincronizar medicamentos',
+                onPressed: _syncing ? null : _syncMedications,
+                icon: _syncing
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.cloud_sync_outlined),
+              ),
+            ]),
         floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _edit(),
             icon: const Icon(Icons.add),

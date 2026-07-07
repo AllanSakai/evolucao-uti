@@ -8,9 +8,11 @@ class SelectedBed {
     required this.bed,
     this.evolutionData,
     this.status = BedProgressStatus.pending,
+    this.statusDate,
   });
 
   final Bed bed;
   EvolutionData? evolutionData;
   BedProgressStatus status;
+  String? statusDate;
 }
