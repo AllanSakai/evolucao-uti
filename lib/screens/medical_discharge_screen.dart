@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'certificate_screen.dart';
 import 'medications_screen.dart';
 import 'prescription_screen.dart';
+import 'prescription_protocols_screen.dart';
 
 class MedicalDischargeScreen extends StatelessWidget {
   const MedicalDischargeScreen({super.key});
@@ -42,6 +43,12 @@ class MedicalDischargeScreen extends StatelessWidget {
                   title: 'Medicamentos',
                   subtitle: 'Pesquise e gerencie o banco local.',
                   screen: MedicationsScreen(),
+                ),
+                const _Tile(
+                  icon: Icons.playlist_add_check_outlined,
+                  title: 'Protocolos',
+                  subtitle: 'Crie atalhos com sequências de medicações.',
+                  screen: PrescriptionProtocolsScreen(),
                 ),
               ],
             ),

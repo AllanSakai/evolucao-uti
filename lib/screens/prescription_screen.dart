@@ -226,7 +226,9 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
 
   Future<void> _applyProtocol() async {
     final protocol = await Navigator.of(context).push<PrescriptionProtocol>(
-      MaterialPageRoute(builder: (_) => const PrescriptionProtocolsScreen()),
+      MaterialPageRoute(
+        builder: (_) => const PrescriptionProtocolsScreen(selectionMode: true),
+      ),
     );
     if (protocol == null) return;
     setState(() => _items.addAll(_copyForPrescription(protocol.medications)));
