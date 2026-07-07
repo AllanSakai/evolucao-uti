@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/medication.dart';
 import '../models/prescription.dart';
+import '../models/prescription_protocol.dart';
 import '../repositories/medication_repository.dart';
+import '../repositories/prescription_protocol_repository.dart';
 import '../services/prescription_service.dart';
 import '../utils/search_normalizer.dart';
 import '../widgets/medication_editor_dialog.dart';
 import 'medications_screen.dart';
+import 'prescription_protocols_screen.dart';
 
 class PrescriptionScreen extends StatefulWidget {
   const PrescriptionScreen({super.key});
@@ -34,6 +37,14 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
                   onPressed: _loadTemplate,
                   icon: const Icon(Icons.bolt_outlined),
                   label: const Text('Modelo UTI')),
+              OutlinedButton.icon(
+                  onPressed: _applyProtocol,
+                  icon: const Icon(Icons.playlist_add_check_outlined),
+                  label: const Text('Protocolos')),
+              OutlinedButton.icon(
+                  onPressed: _items.isEmpty ? null : _saveProtocol,
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Salvar protocolo')),
               FilledButton.icon(
                   onPressed: _add,
                   icon: const Icon(Icons.add),
@@ -51,19 +62,14 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
                       child: Text(
                           'Use o Modelo UTI ou adicione o primeiro medicamento.')))
             else
-              ..._items.asMap().entries.map((entry) => Card(
-                      child: ListTile(
-                    leading: CircleAvatar(child: Text('${entry.key + 1}')),
-                    title: Text('${entry.value.name} ${entry.value.dose}'),
-                    subtitle: Text(
-                        '${entry.value.useType.label} • ${entry.value.administeredQuantity}, ${entry.value.frequency}'),
-                    onTap: () => _edit(entry.key),
-                    trailing: IconButton(
-                        tooltip: 'Remover',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () =>
-                            setState(() => _items.removeAt(entry.key))),
-                  ))),
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: _items.length,
+                onReorderItem: _reorderItem,
+                itemBuilder: (_, index) => _prescriptionTile(index),
+              ),
             const SizedBox(height: 16),
             Card(
                 child: Padding(
@@ -103,10 +109,38 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
         )),
       );
 
+  Widget _prescriptionTile(int index) {
+    final medication = _items[index];
+    return Card(
+      key: ValueKey(medication.id),
+      child: ListTile(
+        leading: ReorderableDragStartListener(
+          index: index,
+          child: CircleAvatar(child: Text('${index + 1}')),
+        ),
+        title: Text('${medication.name} ${medication.dose}'),
+        subtitle: Text(
+          '${medication.useType.label} • ${medication.administeredQuantity}, ${medication.frequency}',
+        ),
+        onTap: () => _edit(index),
+        trailing: IconButton(
+          tooltip: 'Remover',
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () => setState(() => _items.removeAt(index)),
+        ),
+      ),
+    );
+  }
+
+  void _reorderItem(int oldIndex, int newIndex) {
+    setState(() {
+      final item = _items.removeAt(oldIndex);
+      _items.insert(newIndex, item);
+    });
+  }
+
   void _loadTemplate() => setState(() {
-        _items
-          ..clear()
-          ..addAll(_service.utiTemplate());
+        _items.addAll(_copyForPrescription(_service.utiTemplate()));
       });
 
   Future<void> _add() async {
@@ -188,6 +222,74 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _applyProtocol() async {
+    final protocol = await Navigator.of(context).push<PrescriptionProtocol>(
+      MaterialPageRoute(builder: (_) => const PrescriptionProtocolsScreen()),
+    );
+    if (protocol == null) return;
+    setState(() => _items.addAll(_copyForPrescription(protocol.medications)));
+  }
+
+  Future<void> _saveProtocol() async {
+    final name = await _askProtocolName();
+    if (name == null || name.trim().isEmpty) return;
+    final repository = await PrescriptionProtocolRepository.load();
+    final protocol = PrescriptionProtocol(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      name: name.trim(),
+      medications: List.unmodifiable(_items),
+    );
+    await repository.save(protocol);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Protocolo ${protocol.name} salvo.')),
+    );
+  }
+
+  Future<String?> _askProtocolName() async {
+    final controller = TextEditingController();
+    try {
+      return showDialog<String>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Salvar protocolo'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(labelText: 'Nome do protocolo'),
+            onSubmitted: (value) => Navigator.pop(context, value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Salvar'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
+  }
+
+  List<Medication> _copyForPrescription(List<Medication> medications) {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    return [
+      for (final entry in medications.asMap().entries)
+        entry.value.copyWith(
+          id: '${entry.value.id}-$now-${entry.key}',
+          dispensingQuantity: entry.value.dispensingQuantity.trim().isEmpty
+              ? 'Contínuo'
+              : entry.value.dispensingQuantity,
+        ),
+    ];
   }
 
   Future<void> _copy() async {

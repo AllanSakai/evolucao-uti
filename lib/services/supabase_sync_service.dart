@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/bed.dart';
 import '../models/evolution_data.dart';
 import '../models/medication.dart';
+import '../models/prescription_protocol.dart';
 import '../models/selected_bed.dart';
 import 'supabase_config.dart';
 
@@ -97,6 +98,39 @@ class SupabaseSyncService {
         .eq('medication_id', medicationId);
   }
 
+  Future<List<PrescriptionProtocol>> fetchProtocols() async {
+    if (!canSync) return const [];
+    final response = await _client!
+        .from('user_prescription_protocols')
+        .select()
+        .order('name');
+
+    return [
+      for (final row in response)
+        _protocolFromRemote((row as Map).cast<String, dynamic>()),
+    ];
+  }
+
+  Future<void> upsertProtocol(PrescriptionProtocol protocol) async {
+    if (!canSync) return;
+    final userId = _client!.auth.currentUser!.id;
+    await _client!.from('user_prescription_protocols').upsert({
+      'user_id': userId,
+      'protocol_id': protocol.id,
+      'name': protocol.name,
+      'medications': protocol.medications.map((item) => item.toJson()).toList(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id,protocol_id');
+  }
+
+  Future<void> deleteProtocol(String protocolId) async {
+    if (!canSync) return;
+    await _client!
+        .from('user_prescription_protocols')
+        .delete()
+        .eq('protocol_id', protocolId);
+  }
+
   Medication _medicationFromRemote(Map<String, dynamic> json) => Medication(
         id: json['medication_id'] as String,
         name: json['name'] as String? ?? '',
@@ -114,6 +148,18 @@ class SupabaseSyncService {
         frequency: json['frequency'] as String? ?? '',
         dispensingQuantity: json['dispensing_quantity'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+      );
+
+  PrescriptionProtocol _protocolFromRemote(Map<String, dynamic> json) =>
+      PrescriptionProtocol(
+        id: json['protocol_id'] as String,
+        name: json['name'] as String? ?? '',
+        medications: (json['medications'] as List? ?? const [])
+            .map(
+              (item) =>
+                  Medication.fromJson((item as Map).cast<String, dynamic>()),
+            )
+            .toList(),
       );
 }
 
