@@ -3,7 +3,6 @@
 .flutter-plugins-dependencies
 .packages
 build/
-build.locked.*/
 coverage/
 tmp/
 supabase/.temp/

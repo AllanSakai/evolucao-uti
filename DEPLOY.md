@@ -34,26 +34,12 @@ Crie duas secrets:
 ```text
 SUPABASE_URL
 SUPABASE_ANON_KEY
-PRIVILEGED_EMAILS
 ```
 
 Use os valores do Supabase:
 
 - Project URL
 - anon/public key
-
-Em `PRIVILEGED_EMAILS`, coloque o e-mail da conta que pode acessar e editar
-todas as alas. Se houver mais de uma conta, separe por virgula.
-
-Use a mesma lista na Edge Function que gerencia usuarios:
-
-```powershell
-supabase secrets set PRIVILEGED_EMAILS=seu.email@exemplo.com
-supabase functions deploy manage-users
-```
-
-Essa secret fica somente no Supabase. A funcao usa a chave administrativa no
-servidor; ela nunca deve ser adicionada ao Flutter ou aos secrets do build web.
 
 ## 4. Ativar GitHub Pages
 

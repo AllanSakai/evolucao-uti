@@ -86,28 +86,6 @@ flutter run -d chrome --dart-define=SUPABASE_URL=SUA_PROJECT_URL --dart-define=S
 Depois abra o botao de conta no canto superior direito do app, crie sua conta e
 faca login.
 
-Para liberar acesso total a uma conta, informe o e-mail em `PRIVILEGED_EMAILS`.
-Mais de um e-mail pode ser separado por virgula.
-
-```bash
-flutter run -d chrome --dart-define=SUPABASE_URL=SUA_PROJECT_URL --dart-define=SUPABASE_ANON_KEY=SUA_ANON_PUBLIC_KEY --dart-define=PRIVILEGED_EMAILS=seu.email@exemplo.com
-```
-
-### Gerenciamento de usuarios
-
-A conta privilegiada encontra `Gerenciar usuarios` dentro da tela de conta. A
-ferramenta permite criar, editar e apagar usuarios. As operacoes administrativas
-passam pela Edge Function `manage-users`, sem expor a chave administrativa no
-aplicativo.
-
-Configure a mesma lista de e-mails privilegiados como secret da funcao e faça o
-deploy:
-
-```bash
-supabase secrets set PRIVILEGED_EMAILS=seu.email@exemplo.com
-supabase functions deploy manage-users
-```
-
 ## Privacidade
 
 Evite salvar nome, prontuario, data de nascimento ou qualquer dado que
