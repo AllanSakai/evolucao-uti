@@ -15,7 +15,7 @@ class SupabaseSyncService {
   SupabaseClient? get _client => SupabaseConfig.client;
 
   bool get canSync =>
-      SupabaseConfig.isConfigured && _client?.auth.currentUser != null;
+      SupabaseConfig.isConfigured && SupabaseConfig.isAdminSignedIn;
 
   String? get userEmail => _client?.auth.currentUser?.email;
 

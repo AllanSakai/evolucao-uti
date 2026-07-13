@@ -19,8 +19,7 @@ void main() {
     expect(restored.themeMode, ThemeMode.dark);
   });
 
-  testWidgets('ferramentas ficam compactas no desktop e tema alterna',
-      (tester) async {
+  testWidgets('login e sempre a pagina inicial sem uma sessao', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final settings = await AppSettingsController.load();
     await tester.binding.setSurfaceSize(const Size(1440, 900));
@@ -29,12 +28,16 @@ void main() {
     await tester.pumpWidget(EvolucaoUtiApp(settings: settings));
     await tester.pumpAndSettle();
 
-    final toolCard = find.ancestor(
-      of: find.text('Atestado'),
-      matching: find.byType(Card),
+    expect(find.text('Auxiliar UTI'), findsOneWidget);
+    expect(find.text('Usuário'), findsOneWidget);
+    expect(find.text('Senha'), findsOneWidget);
+    expect(find.text('Acesso exclusivo do administrador'), findsOneWidget);
+    expect(find.text('Selecione a UTI do plantão'), findsNothing);
+
+    final enterButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Entrar'),
     );
-    expect(toolCard, findsOneWidget);
-    expect(tester.getSize(toolCard).width, lessThanOrEqualTo(280));
+    expect(enterButton.onPressed, isNull);
 
     await tester.tap(find.byTooltip('Usar tema escuro'));
     await tester.pumpAndSettle();

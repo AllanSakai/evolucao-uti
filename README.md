@@ -13,8 +13,8 @@ medicamentos e protocolos.
 - Exportacao local do plantao preenchido para copiar em um unico texto.
 - Presets locais do formulario de evolucao para reaplicar modelos pessoais.
 - Alta medica com atestado, receita, banco de medicamentos e protocolos.
-- Sincronizacao opcional via Supabase para dados de plantao, medicamentos e
-  protocolos.
+- Acesso protegido por login exclusivo do administrador.
+- Sincronizacao via Supabase para dados de plantao, medicamentos e protocolos.
 
 ## Experimento local
 
@@ -51,8 +51,8 @@ A tela de alta concentra:
 
 ## Sincronizacao com Supabase
 
-A sincronizacao e opcional. Sem Supabase, o app continua salvando localmente no
-aparelho ou navegador.
+O login usa o Supabase Auth. Sem as chaves do Supabase, o conteúdo do aplicativo
+permanece bloqueado.
 
 ### 1. Criar projeto
 
@@ -83,8 +83,16 @@ aparelho ou navegador.
 flutter run -d chrome --dart-define=SUPABASE_URL=SUA_PROJECT_URL --dart-define=SUPABASE_ANON_KEY=SUA_ANON_PUBLIC_KEY
 ```
 
-Depois abra o botao de conta no canto superior direito do app, crie sua conta e
-faca login.
+### 5. Criar o administrador
+
+1. No Supabase, abra `Authentication` e depois `Users`.
+2. Confirme que o usuário `allansakai@gmail.com` está cadastrado e com o e-mail
+   confirmado.
+3. Na tela inicial do app, entre com o usuário `admin` e a senha definida.
+
+Para trocar a conta administrativa, adicione
+`--dart-define=ADMIN_EMAIL=seu.email@exemplo.com` ao comando de execução e ao
+comando de build. O nome de usuário visível continua sendo `admin`.
 
 ## Privacidade
 

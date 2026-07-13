@@ -41,7 +41,14 @@ Use os valores do Supabase:
 - Project URL
 - anon/public key
 
-## 4. Ativar GitHub Pages
+## 4. Criar o usuario administrador
+
+No Supabase, abra `Authentication` > `Users` e confirme que o usuario
+`allansakai@gmail.com` esta cadastrado e com o e-mail confirmado. Esse usuario
+entra no site usando o nome `admin` e tem acesso completo para adicionar, editar
+e remover dados.
+
+## 5. Ativar GitHub Pages
 
 No repositório GitHub:
 
@@ -52,7 +59,7 @@ No repositório GitHub:
 
 Depois do primeiro push, o workflow `.github/workflows/deploy-pages.yml` vai compilar e publicar o site.
 
-## 5. Configurar URLs no Supabase Auth
+## 6. Configurar URLs no Supabase Auth
 
 No Supabase:
 
@@ -81,7 +88,7 @@ https://SEU_USUARIO.github.io/evolucao-uti/
 
 O `/evolucao-uti/` no final é obrigatório para GitHub Pages de repositório.
 
-## 6. Usar no celular
+## 7. Usar no celular
 
 Abra a URL do GitHub Pages no Safari/Chrome do celular, entre na sua conta e use normalmente.
 
