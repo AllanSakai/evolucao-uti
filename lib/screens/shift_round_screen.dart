@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/icu_unit.dart';
 import '../models/evolution_data.dart';
@@ -44,9 +43,6 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final completed = widget.store.beds
-        .where((bed) => bed.status == BedProgressStatus.completed)
-        .length;
     final unitSummary = _analysis.summarize(widget.store.beds);
     return Scaffold(
       appBar: AppBar(
@@ -68,35 +64,17 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 920),
+            constraints: const BoxConstraints(maxWidth: 1180),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 220),
-                      child: Text(
-                        '$completed de ${widget.store.beds.length} concluídos',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _clearUnit,
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Limpar ala'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 _syncStatusCard(),
                 const SizedBox(height: 12),
                 _unitSummaryCard(unitSummary),
-                const SizedBox(height: 12),
-                ...widget.store.beds.map(_bedCard),
+                const SizedBox(height: 22),
+                _bedsSectionHeader(),
+                const SizedBox(height: 10),
+                _bedsGrid(),
               ],
             ),
           ),
@@ -105,25 +83,92 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
     );
   }
 
+  Widget _bedsSectionHeader() {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text('Boxes da ala', style: theme.textTheme.titleMedium),
+        ),
+        Text(
+          '${widget.store.beds.length} boxes',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _bedsGrid() => LayoutBuilder(
+        builder: (context, constraints) {
+          const gap = 12.0;
+          final columns = constraints.maxWidth >= 1080
+              ? 3
+              : constraints.maxWidth >= 680
+                  ? 2
+                  : 1;
+          final cardWidth =
+              (constraints.maxWidth - (gap * (columns - 1))) / columns;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: widget.store.beds
+                .map(
+                  (selected) => SizedBox(
+                    width: cardWidth,
+                    child: _bedCard(selected),
+                  ),
+                )
+                .toList(),
+          );
+        },
+      );
+
   Widget _bedCard(SelectedBed selected) {
     final status = _status(selected.status);
     final checklist = _analysis.checklist(selected.evolutionData);
+    final colorScheme = Theme.of(context).colorScheme;
+    final statusColor = _statusColor(selected.status, colorScheme);
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.zero,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: statusColor, width: 4)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: .12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.bed_outlined,
+                    size: 20,
+                    color: statusColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(selected.bed.displayName,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  child: Text(
+                    selected.bed.displayName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
                 Chip(
-                  avatar: Icon(status.icon, size: 18),
+                  avatar: Icon(status.icon, size: 16, color: statusColor),
                   label: Text(status.label),
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
                 ),
               ],
             ),
@@ -196,67 +241,258 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
     );
   }
 
-  Widget _unitSummaryCard(UnitClinicalSummary summary) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+  Widget _unitSummaryCard(UnitClinicalSummary summary) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final progress =
+        summary.total == 0 ? 0.0 : summary.completed / summary.total;
+    final clinicalIndicators = <({String label, int value, IconData icon})>[
+      if (summary.bedsWithPendingItems > 0)
+        (
+          label: 'Com pendências',
+          value: summary.bedsWithPendingItems,
+          icon: Icons.fact_check_outlined,
+        ),
+      if (summary.mechanicalVentilation > 0)
+        (
+          label: 'VM',
+          value: summary.mechanicalVentilation,
+          icon: Icons.air,
+        ),
+      if (summary.vasoactiveSupport > 0)
+        (
+          label: 'DVA',
+          value: summary.vasoactiveSupport,
+          icon: Icons.medication_outlined,
+        ),
+      if (summary.febrile > 0)
+        (
+          label: 'Febris',
+          value: summary.febrile,
+          icon: Icons.thermostat_outlined,
+        ),
+      if (summary.lowDiuresis > 0)
+        (
+          label: 'Diurese baixa',
+          value: summary.lowDiuresis,
+          icon: Icons.water_drop_outlined,
+        ),
+      if (summary.positiveBalance > 0)
+        (
+          label: 'BH +',
+          value: summary.positiveBalance,
+          icon: Icons.add_circle_outline,
+        ),
+      if (summary.negativeBalance > 0)
+        (
+          label: 'BH -',
+          value: summary.negativeBalance,
+          icon: Icons.remove_circle_outline,
+        ),
+    ];
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final title = Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.monitor_heart_outlined,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Resumo da ala',
+                              style: theme.textTheme.titleMedium),
+                          Text(
+                            '${summary.total} boxes acompanhados',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+                final action = OutlinedButton.icon(
+                  onPressed: _showDiuresisAndBalanceSummary,
+                  icon: const Icon(Icons.water_drop_outlined),
+                  label: const Text('Diurese e BH'),
+                );
+                if (constraints.maxWidth < 500) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      title,
+                      const SizedBox(height: 12),
+                      action,
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: title),
+                    const SizedBox(width: 16),
+                    action,
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Progresso do plantão',
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ),
+                Text(
+                  '${summary.completed} de ${summary.total}',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(8),
+              backgroundColor: colorScheme.surfaceContainerHighest,
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 8.0;
+                final itemWidth = (constraints.maxWidth - gap * 2) / 3;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    SizedBox(
+                      width: itemWidth,
+                      child: _summaryMetric(
+                        label: 'Concluídos',
+                        value: summary.completed,
+                        icon: Icons.check_circle_outline,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _summaryMetric(
+                        label: 'Em andamento',
+                        value: summary.inProgress,
+                        icon: Icons.edit_outlined,
+                        color: colorScheme.tertiary,
+                      ),
+                    ),
+                    SizedBox(
+                      width: itemWidth,
+                      child: _summaryMetric(
+                        label: 'Pendentes',
+                        value: summary.pending,
+                        icon: Icons.schedule,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            if (clinicalIndicators.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              const Divider(),
+              const SizedBox(height: 14),
+              Text('Sinais da ala', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    'Resumo da ala',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: _showDiuresisAndBalanceSummary,
-                    icon: const Icon(Icons.water_drop_outlined),
-                    label: const Text('Diurese/BH'),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: _exportShift,
-                    icon: const Icon(Icons.copy_all_outlined),
-                    label: const Text('Exportar plantao'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _summaryChip('Concluidos', summary.completed),
-                  _summaryChip('Pendentes', summary.pending),
-                  _summaryChip('Em andamento', summary.inProgress),
-                  if (summary.bedsWithPendingItems > 0)
-                    _summaryChip(
-                        'Com pendencias', summary.bedsWithPendingItems),
-                  if (summary.mechanicalVentilation > 0)
-                    _summaryChip('VM', summary.mechanicalVentilation),
-                  if (summary.vasoactiveSupport > 0)
-                    _summaryChip('DVA', summary.vasoactiveSupport),
-                  if (summary.febrile > 0)
-                    _summaryChip('Febris', summary.febrile),
-                  if (summary.lowDiuresis > 0)
-                    _summaryChip('Diurese baixa', summary.lowDiuresis),
-                  if (summary.positiveBalance > 0)
-                    _summaryChip('BH +', summary.positiveBalance),
-                  if (summary.negativeBalance > 0)
-                    _summaryChip('BH -', summary.negativeBalance),
-                ],
+                children: clinicalIndicators
+                    .map(
+                      (indicator) => Chip(
+                        avatar: Icon(indicator.icon, size: 17),
+                        label: Text('${indicator.label}  ${indicator.value}'),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    )
+                    .toList(),
               ),
             ],
-          ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _summaryChip(String label, int value) => Chip(
-        label: Text('$label: $value'),
-        visualDensity: VisualDensity.compact,
-      );
+  Widget _summaryMetric({
+    required String label,
+    required int value,
+    required IconData icon,
+    required Color color,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      constraints: const BoxConstraints(minHeight: 84),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: .18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$value',
+                  style: theme.textTheme.titleLarge?.copyWith(color: color),
+                ),
+              ),
+              Icon(icon, size: 19, color: color),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _annotate(SelectedBed selected) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -320,39 +556,6 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
     );
   }
 
-  Future<void> _exportShift() async {
-    final filled =
-        widget.store.beds.where((selected) => selected.evolutionData != null);
-    if (filled.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum leito preenchido para exportar.')),
-      );
-      return;
-    }
-    final text = _analysis.exportShift(widget.store.beds);
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Plantao exportado'),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: SingleChildScrollView(child: SelectableText(text)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Plantao copiado.')),
-    );
-  }
-
   Widget _syncStatusCard() {
     final sync = SupabaseSyncService.instance;
     final email = sync.userEmail;
@@ -362,6 +565,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
             ? 'Dados atualizados automaticamente • $email'
             : 'Dados locais. Entre na conta para carregar o Supabase.';
     return Card(
+      margin: EdgeInsets.zero,
       color: sync.canSync
           ? Theme.of(context)
               .colorScheme
@@ -459,5 +663,12 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
             label: 'Concluído',
             icon: Icons.check_circle_outline
           ),
+      };
+
+  Color _statusColor(BedProgressStatus status, ColorScheme colorScheme) =>
+      switch (status) {
+        BedProgressStatus.pending => colorScheme.onSurfaceVariant,
+        BedProgressStatus.inProgress => colorScheme.tertiary,
+        BedProgressStatus.completed => colorScheme.primary,
       };
 }
