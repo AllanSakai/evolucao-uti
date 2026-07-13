@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'certificate_screen.dart';
-import 'exam_report_screen.dart';
 import 'medications_screen.dart';
 import 'prescription_screen.dart';
 import 'prescription_protocols_screen.dart';
@@ -32,12 +31,6 @@ class MedicalDischargeScreen extends StatelessWidget {
                   title: 'Atestado de internação',
                   subtitle: 'Informe paciente e período da internação.',
                   screen: CertificateScreen(),
-                ),
-                const _Tile(
-                  icon: Icons.assignment_outlined,
-                  title: 'Laudos de exames',
-                  subtitle: 'Configure paciente, exame e texto do laudo.',
-                  screen: ExamReportScreen(),
                 ),
                 const _Tile(
                   icon: Icons.medication_outlined,
