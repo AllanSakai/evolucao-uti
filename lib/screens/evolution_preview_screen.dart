@@ -53,9 +53,9 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 920),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
                 if (widget.bed != null) ...[
                   Text(widget.bed!.displayName,
@@ -64,7 +64,7 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
                 const SizedBox(height: 16),
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     child: TextField(
                       controller: _controller,
                       readOnly: !_editing,

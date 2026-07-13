@@ -70,11 +70,11 @@ class _PrescriptionProtocolsScreenState
               ),
         body: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 920),
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
                   child: TextField(
                     controller: _search,
                     onChanged: (_) => _load(),
@@ -92,7 +92,7 @@ class _PrescriptionProtocolsScreenState
                               child: Text('Nenhum protocolo encontrado.'),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
                               itemCount: _protocols.length,
                               itemBuilder: (_, index) =>
                                   _tile(_protocols[index]),
@@ -245,9 +245,9 @@ class _ProtocolEditorScreenState extends State<_ProtocolEditorScreen> {
         ),
         body: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 920),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 104),
               children: [
                 TextField(
                   controller: _name,

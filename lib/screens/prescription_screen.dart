@@ -31,81 +31,85 @@ class _PrescriptionScreenState extends State<PrescriptionScreen> {
         body: Center(
             child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(padding: const EdgeInsets.all(16), children: [
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              FilledButton.tonalIcon(
-                  onPressed: _loadTemplate,
-                  icon: const Icon(Icons.bolt_outlined),
-                  label: const Text('Modelo UTI')),
-              OutlinedButton.icon(
-                  onPressed: _applyProtocol,
-                  icon: const Icon(Icons.playlist_add_check_outlined),
-                  label: const Text('Protocolos')),
-              OutlinedButton.icon(
-                  onPressed: _items.isEmpty ? null : _saveProtocol,
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Salvar protocolo')),
-              FilledButton.icon(
-                  onPressed: _add,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Adicionar medicamento')),
-              OutlinedButton.icon(
-                  onPressed: _addFromDatabase,
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  label: const Text('Banco de medicamentos')),
-            ]),
-            const SizedBox(height: 16),
-            if (_items.isEmpty)
-              const Card(
-                  child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text(
-                          'Use o Modelo UTI ou adicione o primeiro medicamento.')))
-            else
-              ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: _items.length,
-                onReorderItem: _reorderItem,
-                itemBuilder: (_, index) => _prescriptionTile(index),
-              ),
-            const SizedBox(height: 16),
-            Card(
-                child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('Prévia da receita',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 12),
-                        Container(
-                            constraints: const BoxConstraints(minHeight: 160),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerLowest,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
+          child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+              children: [
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  FilledButton.tonalIcon(
+                      onPressed: _loadTemplate,
+                      icon: const Icon(Icons.bolt_outlined),
+                      label: const Text('Modelo UTI')),
+                  OutlinedButton.icon(
+                      onPressed: _applyProtocol,
+                      icon: const Icon(Icons.playlist_add_check_outlined),
+                      label: const Text('Protocolos')),
+                  OutlinedButton.icon(
+                      onPressed: _items.isEmpty ? null : _saveProtocol,
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Salvar protocolo')),
+                  FilledButton.icon(
+                      onPressed: _add,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Adicionar medicamento')),
+                  OutlinedButton.icon(
+                      onPressed: _addFromDatabase,
+                      icon: const Icon(Icons.inventory_2_outlined),
+                      label: const Text('Banco de medicamentos')),
+                ]),
+                const SizedBox(height: 16),
+                if (_items.isEmpty)
+                  const Card(
+                      child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                              'Use o Modelo UTI ou adicione o primeiro medicamento.')))
+                else
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    buildDefaultDragHandles: false,
+                    itemCount: _items.length,
+                    onReorderItem: _reorderItem,
+                    itemBuilder: (_, index) => _prescriptionTile(index),
+                  ),
+                const SizedBox(height: 16),
+                Card(
+                    child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text('Prévia da receita',
+                                style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            Container(
+                                constraints:
+                                    const BoxConstraints(minHeight: 160),
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .outlineVariant)),
-                            child: SelectableText(
-                                _preview.isEmpty
-                                    ? 'A prévia aparecerá automaticamente aqui.'
-                                    : _preview,
-                                style: const TextStyle(
-                                    fontFamily: 'monospace', height: 1.45))),
-                        const SizedBox(height: 12),
-                        FilledButton.icon(
-                            onPressed: _items.isEmpty ? null : _copy,
-                            icon: const Icon(Icons.copy),
-                            label: const Text('Copiar Receita')),
-                      ],
-                    ))),
-          ]),
+                                        .surfaceContainerLowest,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant)),
+                                child: SelectableText(
+                                    _preview.isEmpty
+                                        ? 'A prévia aparecerá automaticamente aqui.'
+                                        : _preview,
+                                    style: const TextStyle(
+                                        fontFamily: 'monospace',
+                                        height: 1.45))),
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                                onPressed: _items.isEmpty ? null : _copy,
+                                icon: const Icon(Icons.copy),
+                                label: const Text('Copiar Receita')),
+                          ],
+                        ))),
+              ]),
         )),
       );
 

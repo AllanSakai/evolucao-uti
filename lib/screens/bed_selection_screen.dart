@@ -39,9 +39,9 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 920),
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
               children: [
                 Row(
                   children: [
@@ -71,18 +71,21 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
                 const SizedBox(height: 16),
                 if (_loadingSaved) const LinearProgressIndicator(),
                 if (_loadingSaved) const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 150,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.25,
+                LayoutBuilder(
+                  builder: (context, constraints) => GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 170,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.25,
+                    ),
+                    itemCount: widget.unit.beds.length,
+                    itemBuilder: (context, index) =>
+                        _bedCard(widget.unit.beds[index]),
                   ),
-                  itemCount: widget.unit.beds.length,
-                  itemBuilder: (context, index) =>
-                      _bedCard(widget.unit.beds[index]),
                 ),
               ],
             ),
@@ -96,7 +99,7 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
     final selected = _selectedIds.contains(bed.id);
     final colors = Theme.of(context).colorScheme;
     return Card(
-      color: selected ? colors.primaryContainer : null,
+      color: selected ? colors.primaryContainer.withValues(alpha: .65) : null,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => setState(() {
@@ -110,10 +113,19 @@ class _BedSelectionScreenState extends State<BedSelectionScreen> {
             ),
             if (bed.isIsolation)
               const Positioned(
-                  right: 6, top: 6, child: Chip(label: Text('ISO'))),
+                right: 8,
+                top: 8,
+                child: Chip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text('ISO'),
+                ),
+              ),
             if (selected)
-              const Positioned(
-                  left: 8, top: 8, child: Icon(Icons.check_circle)),
+              Positioned(
+                left: 8,
+                top: 8,
+                child: Icon(Icons.check_circle, color: colors.primary),
+              ),
           ],
         ),
       ),

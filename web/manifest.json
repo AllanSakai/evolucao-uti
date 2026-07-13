@@ -1,6 +1,6 @@
 {
-    "name": "EvolucaoUTI",
-    "short_name": "EvolucaoUTI",
+    "name": "AuxiliarUTI",
+    "short_name": "AuxiliarUTI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F5F7F8",

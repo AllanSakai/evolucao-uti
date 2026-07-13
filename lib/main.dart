@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app_theme.dart';
 import 'screens/icu_unit_selection_screen.dart';
 import 'services/supabase_config.dart';
 
@@ -25,20 +26,11 @@ class EvolucaoUtiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'EvoluçãoUTI',
+      title: 'AuxiliarUTI',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF176B87),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF5F7F8),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-          isDense: true,
-        ),
-        useMaterial3: true,
-      ),
+      theme: PassagemUtiTheme.light,
+      darkTheme: PassagemUtiTheme.dark,
+      themeMode: ThemeMode.system,
       home: const IcuUnitSelectionScreen(),
     );
   }

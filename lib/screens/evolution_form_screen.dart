@@ -3,6 +3,8 @@ import 'dart:async';
 
 import '../models/bed.dart';
 import '../models/evolution_data.dart';
+import '../models/evolution_form_preset.dart';
+import '../repositories/evolution_preset_repository.dart';
 import '../utils/drug_options.dart';
 import '../widgets/form_section.dart';
 import 'evolution_preview_screen.dart';
@@ -34,7 +36,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   BloodPressureState _bloodPressureState = BloodPressureState.normotenso;
   VasoactiveSupport _dvaSupport = VasoactiveSupport.semDva;
   DietRoute _diet = DietRoute.vo;
-  DiuresisType _diuresis = DiuresisType.espontanea;
+  DiuresisType? _diuresis;
   BowelMovement _bowel = BowelMovement.ausentes;
   StoolPathologicalProducts _stoolProducts = StoolPathologicalProducts.ausentes;
   String _period = '12H';
@@ -168,41 +170,16 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     final data = widget.initialData;
     if (data == null) return;
     _restoringDraft = true;
-    _sex = data.sex;
-    _template = data.template ?? _template;
-    _neurological = data.neurologicalState ?? _neurological;
-    _support = data.ventilatorySupport ?? _support;
-    _hemodynamic = data.hemodynamicState ?? _hemodynamic;
-    _bloodPressureState = data.bloodPressureState ?? _bloodPressureState;
-    _dvaSupport = data.vasoactiveSupport ?? _dvaSupport;
-    _diet = data.dietRoute ?? _diet;
-    _diuresis = data.diuresisType ?? _diuresis;
-    _bowel = data.bowelMovement ?? _bowel;
-    _stoolProducts = data.stoolPathologicalProducts ?? _stoolProducts;
-    _period = data.diuresisPeriod ?? data.fluidBalancePeriod ?? _period;
-    _ventilationMode = data.ventilationMode;
-    _vmSynchrony = data.ventilatorSynchrony ?? _vmSynchrony;
-    _usesHomeOxygen = data.homeOxygenFlow != null;
-    _nausea = data.nausea;
-    _vomiting = data.vomiting;
-    _stasis = data.gastricStasis;
-    _selectedSedationDrugs.addAll(data.sedationDrugRates.keys);
-    _selectedVasoactiveDrugs.addAll(data.vasoactiveDrugRates.keys);
-    for (final entry in data.sedationDrugRates.entries) {
-      _sedationRates[entry.key]?.text = entry.value;
-    }
-    for (final entry in data.vasoactiveDrugRates.entries) {
-      _vasoactiveRates[entry.key]?.text = entry.value;
-    }
-    _restoreFields(data);
-    _restoreFormState(data.formState);
+    _applyData(data);
     _restoringDraft = false;
   }
 
   @override
   void dispose() {
     if (!_restoringDraft && widget.bed != null && widget.onDraftSaved != null) {
-      widget.onDraftSaved?.call(_currentData());
+      final data = _currentData();
+      final onDraftSaved = widget.onDraftSaved;
+      Timer.run(() => onDraftSaved?.call(data));
     }
     _draftSaveTimer?.cancel();
     for (final controller in [
@@ -233,9 +210,9 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 920),
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 104),
               children: [
                 if (widget.bed != null) _bedHeader(context),
                 _generateButton(),
@@ -249,44 +226,73 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     onChanged: (v) => _update(() => _sex = v),
                   ),
                   _presetButtons(),
-                  _chips<NeurologicalState>(
-                    title: 'Neuro',
-                    values: NeurologicalState.values,
-                    selected: _neurological,
-                    labelOf: (v) => switch (v) {
-                      NeurologicalState.acordado => 'Acordado',
-                      NeurologicalState.sedado => 'Sedado',
-                      NeurologicalState.sonolento => 'Sonolento',
-                      NeurologicalState.confuso => 'Confuso',
-                    },
-                    onChanged: (v) => _update(() => _neurological = v),
-                  ),
-                  if (_neurological == NeurologicalState.sedado) ...[
-                    _drugChips(
-                      options: sedationDrugOptions,
-                      selected: _selectedSedationDrugs,
-                      controllers: _sedationRates,
-                    ),
-                  ],
                 ]),
                 FormSection(title: 'Sinais e respiratório', children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                          child: _text('paSystolic', 'PAS',
-                              hint: '120', number: true)),
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(8, 18, 8, 0),
-                        child: Text('/'),
-                      ),
-                      Expanded(
-                          child: _text('paDiastolic', 'PAD',
-                              hint: '80', number: true)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: _text('fc', 'FC', hint: '82', number: true)),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 520) {
+                        return Column(
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _text(
+                                    'paSystolic',
+                                    'PAS',
+                                    hint: '120',
+                                    number: true,
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.fromLTRB(8, 18, 8, 0),
+                                  child: Text('/'),
+                                ),
+                                Expanded(
+                                  child: _text(
+                                    'paDiastolic',
+                                    'PAD',
+                                    hint: '80',
+                                    number: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _text('fc', 'FC', hint: '82', number: true),
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _text(
+                              'paSystolic',
+                              'PAS',
+                              hint: '120',
+                              number: true,
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(8, 18, 8, 0),
+                            child: Text('/'),
+                          ),
+                          Expanded(
+                            child: _text(
+                              'paDiastolic',
+                              'PAD',
+                              hint: '80',
+                              number: true,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _text('fc', 'FC', hint: '82', number: true),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   _row(
                     _temperatureField(),
@@ -446,7 +452,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     },
                     onChanged: (v) => _update(() => _diuresis = v),
                   ),
-                  if (_diuresis != DiuresisType.ausente)
+                  if (_diuresis != null && _diuresis != DiuresisType.ausente)
                     _row(
                       _text('urineVolume', 'Volume', hint: '250', number: true),
                       _text('urineAppearance', 'Aspecto',
@@ -684,17 +690,13 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     icon: const Icon(Icons.psychology_alt_outlined),
                     label: const Text('Neurológico normal'),
                   ),
-                  _chips<bool>(
-                    title: 'Sedação',
-                    values: const [false, true],
-                    selected: _neurological == NeurologicalState.sedado,
-                    labelOf: (v) => v ? 'Sim' : 'Não',
-                    onChanged: (v) => _update(() {
-                      _neurological = v
-                          ? NeurologicalState.sedado
-                          : NeurologicalState.acordado;
-                    }),
-                  ),
+                  _neuroStateSelector(),
+                  if (_neurological == NeurologicalState.sedado)
+                    _drugChips(
+                      options: sedationDrugOptions,
+                      selected: _selectedSedationDrugs,
+                      controllers: _sedationRates,
+                    ),
                   if (_neurological == NeurologicalState.sedado ||
                       _isDeepSedation) ...[
                     _text('rass', 'RASS',
@@ -823,13 +825,28 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
 
   Widget _bedHeader(BuildContext context) => Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              const Icon(Icons.bed_outlined),
-              const SizedBox(width: 10),
-              Text(widget.bed!.displayName,
-                  style: Theme.of(context).textTheme.titleLarge),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.bed_outlined,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.bed!.displayName,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
             ],
           ),
         ),
@@ -848,6 +865,16 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
             onPressed: () => _applyPreset(mechanicalVentilation: true),
             icon: const Icon(Icons.monitor_heart_outlined),
             label: const Text('Padrão IOT/VM'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _saveCurrentAsPreset,
+            icon: const Icon(Icons.bookmark_add_outlined),
+            label: const Text('Salvar modelo'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _showSavedPresets,
+            icon: const Icon(Icons.folder_open_outlined),
+            label: const Text('Modelos salvos'),
           ),
         ],
       );
@@ -946,11 +973,27 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Text(
           'GCS calculado: ${_gcsText()} ($_gcsEye, $_gcsVerbal, $_gcsMotor)',
           style: Theme.of(context).textTheme.labelLarge,
         ),
+      );
+
+  Widget _neuroStateSelector() => _chips<NeurologicalState>(
+        title: 'Estado neurológico',
+        values: NeurologicalState.values,
+        selected: _neurological,
+        labelOf: (v) => switch (v) {
+          NeurologicalState.acordado => 'Acordado',
+          NeurologicalState.sedado => 'Sedado',
+          NeurologicalState.sonolento => 'Sonolento',
+          NeurologicalState.confuso => 'Confuso',
+        },
+        onChanged: (v) => _update(() => _setNeurologicalState(v)),
       );
 
   Widget _segmented<T>({
@@ -1104,13 +1147,26 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         TextSelection.collapsed(offset: controller.text.length);
   }
 
-  Widget _row(Widget left, Widget right) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: left),
-          const SizedBox(width: 10),
-          Expanded(child: right),
-        ],
+  Widget _row(Widget left, Widget right) => LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 520) {
+            return Column(
+              children: [
+                left,
+                const SizedBox(height: 12),
+                right,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: left),
+              const SizedBox(width: 12),
+              Expanded(child: right),
+            ],
+          );
+        },
       );
 
   String _supportLabel(VentilatorySupport support) => switch (support) {
@@ -1431,12 +1487,16 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         hgtMinimum: _value('hgtMin'),
         hgtMaximum: _value('hgtMax'),
         diuresisType: _diuresis,
-        diuresisVolume:
-            _diuresis == DiuresisType.ausente ? null : _value('urineVolume'),
-        diuresisPeriod: _diuresis == DiuresisType.ausente ? null : _period,
-        diuresisAppearance: _diuresis == DiuresisType.ausente
+        diuresisVolume: _diuresis == null || _diuresis == DiuresisType.ausente
             ? null
-            : _value('urineAppearance'),
+            : _value('urineVolume'),
+        diuresisPeriod: _diuresis == null || _diuresis == DiuresisType.ausente
+            ? null
+            : _period,
+        diuresisAppearance:
+            _diuresis == null || _diuresis == DiuresisType.ausente
+                ? null
+                : _value('urineAppearance'),
         fluidBalance: _value('balance'),
         fluidBalancePeriod: _value('balance') == null ? null : _period,
         bowelMovement: _bowel,
@@ -1517,6 +1577,9 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   }
 
   void _restoreFields(EvolutionData data) {
+    for (final controller in _fields.values) {
+      controller.clear();
+    }
     final pressureParts = data.bloodPressure?.split(RegExp(r'[/xX]'));
     if (pressureParts != null && pressureParts.length >= 2) {
       _fields['paSystolic']!.text = pressureParts[0].trim();
@@ -1605,6 +1668,59 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         state['upperLimbEdemaGrade'] as String? ?? _upperLimbEdemaGrade;
   }
 
+  void _applyData(EvolutionData data) {
+    _selectedSedationDrugs.clear();
+    _selectedVasoactiveDrugs.clear();
+    for (final controller in [
+      ..._sedationRates.values,
+      ..._vasoactiveRates.values,
+    ]) {
+      controller.clear();
+    }
+    _rightPulmonaryFindings.clear();
+    _leftPulmonaryFindings.clear();
+    _rightPulmonaryLocations.clear();
+    _leftPulmonaryLocations.clear();
+    _abdominalPainLocations.clear();
+    _abdominalOtherFindings.clear();
+    _lowerLimbSides.clear();
+
+    _sex = data.sex;
+    _template = data.template ?? EvolutionTemplate.acordadoArAmbiente;
+    _neurological = data.neurologicalState ?? NeurologicalState.acordado;
+    _support = data.ventilatorySupport ?? VentilatorySupport.arAmbiente;
+    _hemodynamic = data.hemodynamicState ?? HemodynamicState.estavel;
+    _bloodPressureState =
+        data.bloodPressureState ?? BloodPressureState.normotenso;
+    _dvaSupport = data.vasoactiveSupport ?? VasoactiveSupport.semDva;
+    _diet = data.dietRoute ?? DietRoute.vo;
+    _diuresis = data.diuresisType;
+    _bowel = data.bowelMovement ?? BowelMovement.ausentes;
+    _stoolProducts =
+        data.stoolPathologicalProducts ?? StoolPathologicalProducts.ausentes;
+    _period = data.diuresisPeriod ?? data.fluidBalancePeriod ?? '12H';
+    _ventilationMode = data.ventilationMode;
+    _vmSynchrony = data.ventilatorSynchrony ?? true;
+    _usesHomeOxygen = data.homeOxygenFlow != null;
+    _nausea = data.nausea;
+    _vomiting = data.vomiting;
+    _stasis = data.gastricStasis;
+    _selectedSedationDrugs.addAll(data.sedationDrugRates.keys);
+    _selectedVasoactiveDrugs.addAll(data.vasoactiveDrugRates.keys);
+    for (final entry in data.sedationDrugRates.entries) {
+      _sedationRates[entry.key]?.text = entry.value;
+    }
+    for (final entry in data.vasoactiveDrugRates.entries) {
+      _vasoactiveRates[entry.key]?.text = entry.value;
+    }
+    _restoreFields(data);
+    _restoreFormState(data.formState);
+    if (data.neurologicalState == NeurologicalState.confuso &&
+        data.formState['gcsVerbal'] == null) {
+      _gcsVerbal = 'RV4';
+    }
+  }
+
   void _restoreStringSet(Set<String> target, Object? raw) {
     target
       ..clear()
@@ -1657,11 +1773,18 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
 
   void _applyNormalNeurological() {
     _update(() {
-      _neurological = NeurologicalState.acordado;
+      _setNeurologicalState(NeurologicalState.acordado);
       _setNormalNeurologicalFields();
       _fields['rass']!.clear();
       _fields['neuroDeficit']!.clear();
     });
+  }
+
+  void _setNeurologicalState(NeurologicalState state) {
+    _neurological = state;
+    if (state == NeurologicalState.confuso) {
+      _gcsVerbal = 'RV4';
+    }
   }
 
   void _setNormalNeurologicalFields() {
@@ -1671,5 +1794,127 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
     _pifr = true;
     _mobilityPreserved = true;
     _strengthPreserved = true;
+  }
+
+  Future<void> _saveCurrentAsPreset() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Salvar modelo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Nome do modelo'),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) => Navigator.of(context).pop(value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.trim().isEmpty) return;
+    final repository = await LocalEvolutionPresetRepository.load();
+    final preset = await repository.save(name: name, data: _currentData());
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Modelo ${preset.name} salvo.')),
+    );
+  }
+
+  Future<void> _showSavedPresets() async {
+    final repository = await LocalEvolutionPresetRepository.load();
+    final presets = await repository.getAll();
+    if (!mounted) return;
+    if (presets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenhum modelo salvo ainda.')),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                'Modelos salvos',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            for (final preset in presets)
+              ListTile(
+                leading: const Icon(Icons.bookmark_outline),
+                title: Text(preset.name),
+                subtitle: Text(_presetSubtitle(preset)),
+                trailing: IconButton(
+                  tooltip: 'Excluir modelo',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    await repository.delete(preset.id);
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Modelo ${preset.name} excluido.')),
+                    );
+                  },
+                ),
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Aplicar ${preset.name}?'),
+                      content: const Text(
+                        'O modelo vai substituir os campos atuais deste formulario. O leito e o status nao serao alterados.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancelar'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Aplicar'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed != true) return;
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  _restoringDraft = true;
+                  setState(() => _applyData(preset.data));
+                  _restoringDraft = false;
+                  _saveDraftSoon();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _presetSubtitle(EvolutionFormPreset preset) {
+    final date = preset.updatedAt.toLocal();
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return 'Atualizado em $day/$month/${date.year} $hour:$minute';
   }
 }

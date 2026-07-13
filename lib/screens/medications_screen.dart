@@ -87,10 +87,10 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
             label: const Text('Adicionar')),
         body: Center(
             child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
+          constraints: const BoxConstraints(maxWidth: 920),
           child: Column(children: [
             Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
                 child: TextField(
                     controller: _search,
                     onChanged: (_) => _load(),
@@ -104,7 +104,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                         ? const Center(
                             child: Text('Nenhum medicamento encontrado.'))
                         : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
                             itemCount: _medications.length,
                             itemBuilder: (_, index) =>
                                 _tile(_medications[index]))),
