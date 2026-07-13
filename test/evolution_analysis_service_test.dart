@@ -141,7 +141,7 @@ void main() {
       ),
     ]);
 
-    expect(text, contains('UTI A - LEITO 1'));
+    expect(text, contains('UTI A - BOX 1'));
     expect(text, isNot(contains('LEITO 2')));
   });
 

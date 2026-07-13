@@ -23,11 +23,21 @@ void main() {
     expect(find.textContaining('Exportar'), findsNothing);
 
     final firstBedCard = find.ancestor(
-      of: find.text('UTI 1 - Leito 1'),
+      of: find.text('UTI 1 - BOX 1'),
       matching: find.byType(Card),
     );
     expect(firstBedCard, findsOneWidget);
     expect(tester.getSize(firstBedCard).width, lessThan(390));
+
+    final detailedBedCard = find.ancestor(
+      of: find.text('UTI 1 - BOX 2 - box com identificação adicional'),
+      matching: find.byType(Card),
+    );
+    expect(detailedBedCard, findsOneWidget);
+    expect(
+      tester.getSize(firstBedCard).height,
+      tester.getSize(detailedBedCard).height,
+    );
   });
 
   testWidgets('boxes ocupam uma coluna em tela pequena', (tester) async {
@@ -37,7 +47,7 @@ void main() {
     await _pumpShiftRound(tester);
 
     final firstBedCard = find.ancestor(
-      of: find.text('UTI 1 - Leito 1'),
+      of: find.text('UTI 1 - BOX 1'),
       matching: find.byType(Card),
     );
     expect(firstBedCard, findsOneWidget);
@@ -54,7 +64,8 @@ Future<void> _pumpShiftRound(WidgetTester tester) async {
     (index) => Bed(
       id: 'bed-${index + 1}',
       unitCode: '1',
-      label: '${index + 1}',
+      label:
+          index == 1 ? '2 - box com identificação adicional' : '${index + 1}',
       isIsolation: false,
     ),
   );

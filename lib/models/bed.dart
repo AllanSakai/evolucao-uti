@@ -12,5 +12,5 @@ class Bed {
   final bool isIsolation;
 
   String get displayName =>
-      isIsolation ? 'UTI $unitCode - $label' : 'UTI $unitCode - Leito $label';
+      isIsolation ? 'UTI $unitCode - $label' : 'UTI $unitCode - BOX $label';
 }

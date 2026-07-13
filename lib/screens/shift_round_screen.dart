@@ -109,19 +109,45 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
               : constraints.maxWidth >= 680
                   ? 2
                   : 1;
-          final cardWidth =
-              (constraints.maxWidth - (gap * (columns - 1))) / columns;
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: widget.store.beds
-                .map(
-                  (selected) => SizedBox(
-                    width: cardWidth,
-                    child: _bedCard(selected),
+          final beds = widget.store.beds;
+          if (columns == 1) {
+            return Column(
+              children: [
+                for (var index = 0; index < beds.length; index++)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: index < beds.length - 1 ? gap : 0,
+                    ),
+                    child: _bedCard(beds[index]),
                   ),
-                )
-                .toList(),
+              ],
+            );
+          }
+          final rowCount = (beds.length + columns - 1) ~/ columns;
+          return Column(
+            children: List.generate(
+              rowCount,
+              (row) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: row < rowCount - 1 ? gap : 0,
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var column = 0; column < columns; column++) ...[
+                        if (column > 0) const SizedBox(width: gap),
+                        Expanded(
+                          child: row * columns + column < beds.length
+                              ? _bedCard(beds[row * columns + column])
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         },
       );
