@@ -15,12 +15,13 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
   LocalMedicationRepository? _repository;
   List<Medication> _medications = [];
   final _search = TextEditingController();
-  bool _syncing = false;
+  bool _loading = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(refreshRemote: true);
   }
 
   @override
@@ -29,58 +30,36 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    _repository ??= await LocalMedicationRepository.load();
-    _medications = await _repository!.search(_search.text);
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _syncMedications() async {
-    final sync = SupabaseSyncService.instance;
-    if (!sync.canSync) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Entre na mesma conta no celular e no computador.'),
-        ),
-      );
-      return;
+  Future<void> _load({bool refreshRemote = false}) async {
+    if (refreshRemote && mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
     }
-    setState(() => _syncing = true);
     try {
       _repository ??= await LocalMedicationRepository.load();
-      await _repository!.syncNow();
+      if (refreshRemote && SupabaseSyncService.instance.canSync) {
+        await _repository!.syncNow();
+      }
       _medications = await _repository!.search(_search.text);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Medicamentos sincronizados.')),
-      );
     } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao sincronizar medicamentos: $error')),
-      );
+      _loadError = 'Não foi possível atualizar os dados do Supabase.';
+      _medications = await _repository?.search(_search.text) ?? [];
     } finally {
-      if (mounted) setState(() => _syncing = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            title: Text(
-                widget.selectionMode ? 'Adicionar do banco' : 'Medicamentos'),
-            actions: [
-              IconButton(
-                tooltip: 'Sincronizar medicamentos',
-                onPressed: _syncing ? null : _syncMedications,
-                icon: _syncing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.cloud_sync_outlined),
-              ),
-            ]),
+          title: Text(
+            widget.selectionMode ? 'Adicionar do banco' : 'Medicamentos',
+          ),
+        ),
         floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _edit(),
             icon: const Icon(Icons.add),
@@ -90,15 +69,28 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
           constraints: const BoxConstraints(maxWidth: 920),
           child: Column(children: [
             Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-                child: TextField(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+              child: Column(
+                children: [
+                  TextField(
                     controller: _search,
                     onChanged: (_) => _load(),
                     decoration: const InputDecoration(
-                        labelText: 'Pesquisar medicamento',
-                        prefixIcon: Icon(Icons.search)))),
+                      labelText: 'Pesquisar medicamento',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _dataSourceBanner(),
+                  if (_loading) ...[
+                    const SizedBox(height: 8),
+                    const LinearProgressIndicator(),
+                  ],
+                ],
+              ),
+            ),
             Expanded(
-                child: _repository == null
+                child: _repository == null && _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _medications.isEmpty
                         ? const Center(
@@ -111,6 +103,40 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
           ]),
         )),
       );
+
+  Widget _dataSourceBanner() {
+    final colors = Theme.of(context).colorScheme;
+    final sync = SupabaseSyncService.instance;
+    final hasError = _loadError != null;
+    final icon = hasError
+        ? Icons.cloud_off_outlined
+        : sync.canSync
+            ? Icons.cloud_done_outlined
+            : Icons.storage_outlined;
+    final text = hasError
+        ? _loadError!
+        : sync.canSync
+            ? 'Dados atualizados automaticamente pelo Supabase'
+            : 'Dados locais — entre na conta para carregar o Supabase';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: hasError
+            ? colors.errorContainer.withValues(alpha: .55)
+            : colors.surfaceContainerHighest.withValues(alpha: .65),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+        ],
+      ),
+    );
+  }
 
   Widget _tile(Medication medication) => Card(
           child: ListTile(

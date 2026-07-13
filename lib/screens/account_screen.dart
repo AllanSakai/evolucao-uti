@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/supabase_config.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -27,7 +28,10 @@ class _AccountScreenState extends State<AccountScreen> {
     final hasKeys = SupabaseConfig.hasKeys;
     final user = SupabaseConfig.client?.auth.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('Conta e sincronização')),
+      appBar: AppBar(
+        title: const Text('Conta e sincronização'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -52,7 +56,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         const SizedBox(height: 8),
                         Text(
                           configured
-                              ? 'Ao entrar, seus preenchimentos serão sincronizados entre celular e computador.'
+                              ? 'Ao entrar, o app carrega e salva automaticamente seus dados do Supabase.'
                               : hasKeys
                                   ? 'As chaves foram recebidas, mas o Supabase não iniciou. Confira as secrets e publique novamente.'
                                   : 'O app continua funcionando localmente. Depois que você criar o projeto no Supabase, rode o app com SUPABASE_URL e SUPABASE_ANON_KEY.',
@@ -173,7 +177,23 @@ class _SignedIn extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Conectado como $email'),
+            Row(
+              children: [
+                Icon(
+                  Icons.cloud_done_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Conectado como $email')),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Sincronização automática ativa',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () async {

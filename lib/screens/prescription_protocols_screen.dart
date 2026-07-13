@@ -23,12 +23,13 @@ class _PrescriptionProtocolsScreenState
   PrescriptionProtocolRepository? _repository;
   List<PrescriptionProtocol> _protocols = [];
   final _search = TextEditingController();
-  bool _syncing = false;
+  bool _loading = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(refreshRemote: true);
   }
 
   @override
@@ -37,10 +38,25 @@ class _PrescriptionProtocolsScreenState
     super.dispose();
   }
 
-  Future<void> _load() async {
-    _repository ??= await PrescriptionProtocolRepository.load();
-    _protocols = await _repository!.search(_search.text);
-    if (mounted) setState(() {});
+  Future<void> _load({bool refreshRemote = false}) async {
+    if (refreshRemote && mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
+    try {
+      _repository ??= await PrescriptionProtocolRepository.load();
+      if (refreshRemote && SupabaseSyncService.instance.canSync) {
+        await _repository!.syncNow();
+      }
+      _protocols = await _repository!.search(_search.text);
+    } catch (_) {
+      _loadError = 'Não foi possível atualizar os dados do Supabase.';
+      _protocols = await _repository?.search(_search.text) ?? [];
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -48,18 +64,6 @@ class _PrescriptionProtocolsScreenState
         appBar: AppBar(
           title:
               Text(widget.selectionMode ? 'Adicionar protocolo' : 'Protocolos'),
-          actions: [
-            IconButton(
-              tooltip: 'Sincronizar protocolos',
-              onPressed: _syncing ? null : _syncProtocols,
-              icon: _syncing
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.cloud_sync_outlined),
-            ),
-          ],
         ),
         floatingActionButton: widget.selectionMode
             ? null
@@ -84,8 +88,20 @@ class _PrescriptionProtocolsScreenState
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Column(
+                    children: [
+                      _dataSourceBanner(),
+                      if (_loading) ...[
+                        const SizedBox(height: 8),
+                        const LinearProgressIndicator(),
+                      ],
+                    ],
+                  ),
+                ),
                 Expanded(
-                  child: _repository == null
+                  child: _repository == null && _loading
                       ? const Center(child: CircularProgressIndicator())
                       : _protocols.isEmpty
                           ? const Center(
@@ -103,6 +119,40 @@ class _PrescriptionProtocolsScreenState
           ),
         ),
       );
+
+  Widget _dataSourceBanner() {
+    final colors = Theme.of(context).colorScheme;
+    final sync = SupabaseSyncService.instance;
+    final hasError = _loadError != null;
+    final icon = hasError
+        ? Icons.cloud_off_outlined
+        : sync.canSync
+            ? Icons.cloud_done_outlined
+            : Icons.storage_outlined;
+    final text = hasError
+        ? _loadError!
+        : sync.canSync
+            ? 'Dados atualizados automaticamente pelo Supabase'
+            : 'Dados locais — entre na conta para carregar o Supabase';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: hasError
+            ? colors.errorContainer.withValues(alpha: .55)
+            : colors.surfaceContainerHighest.withValues(alpha: .65),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodySmall)),
+        ],
+      ),
+    );
+  }
 
   Widget _tile(PrescriptionProtocol protocol) => Card(
         child: ListTile(
@@ -170,34 +220,6 @@ class _PrescriptionProtocolsScreenState
     _repository ??= await PrescriptionProtocolRepository.load();
     await _repository!.delete(protocol.id);
     await _load();
-  }
-
-  Future<void> _syncProtocols() async {
-    final sync = SupabaseSyncService.instance;
-    if (!sync.canSync) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Entre na mesma conta no celular e no computador.'),
-        ),
-      );
-      return;
-    }
-    setState(() => _syncing = true);
-    try {
-      _repository ??= await PrescriptionProtocolRepository.load();
-      _protocols = await _repository!.syncNow();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Protocolos sincronizados.')),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao sincronizar protocolos: $error')),
-      );
-    } finally {
-      if (mounted) setState(() => _syncing = false);
-    }
   }
 }
 

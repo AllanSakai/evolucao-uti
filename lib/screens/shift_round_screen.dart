@@ -8,6 +8,7 @@ import '../services/evolution_analysis_service.dart';
 import '../services/evolution_generator.dart';
 import '../services/shift_round_store.dart';
 import '../services/supabase_sync_service.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'account_screen.dart';
 import 'evolution_form_screen.dart';
 import 'evolution_preview_screen.dart';
@@ -24,7 +25,7 @@ class ShiftRoundScreen extends StatefulWidget {
 
 class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
   final _analysis = const EvolutionAnalysisService();
-  bool _syncing = false;
+  bool _loadingRemote = false;
 
   @override
   void initState() {
@@ -51,16 +52,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       appBar: AppBar(
         title: Text(widget.unit.name),
         actions: [
-          IconButton(
-            tooltip: 'Sincronizar',
-            onPressed: _syncing ? null : _syncNow,
-            icon: _syncing
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.cloud_sync_outlined),
-          ),
+          const ThemeToggleButton(),
           IconButton(
             tooltip: 'Conta e sincronização',
             onPressed: _openAccount,
@@ -91,11 +83,6 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                         '$completed de ${widget.store.beds.length} concluídos',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _syncing ? null : _syncNow,
-                      icon: const Icon(Icons.cloud_sync_outlined),
-                      label: Text(_syncing ? 'Sincronizando' : 'Sincronizar'),
                     ),
                     OutlinedButton.icon(
                       onPressed: _clearUnit,
@@ -369,9 +356,11 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
   Widget _syncStatusCard() {
     final sync = SupabaseSyncService.instance;
     final email = sync.userEmail;
-    final text = sync.canSync
-        ? 'Sincronização ativa: $email'
-        : 'Sincronização inativa. Entre na mesma conta no celular e no computador.';
+    final text = _loadingRemote
+        ? 'Atualizando dados do Supabase...'
+        : sync.canSync
+            ? 'Dados atualizados automaticamente • $email'
+            : 'Dados locais. Entre na conta para carregar o Supabase.';
     return Card(
       color: sync.canSync
           ? Theme.of(context)
@@ -383,9 +372,15 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Icon(sync.canSync
-                ? Icons.cloud_done_outlined
-                : Icons.cloud_off_outlined),
+            if (_loadingRemote)
+              const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(sync.canSync
+                  ? Icons.cloud_done_outlined
+                  : Icons.cloud_off_outlined),
             const SizedBox(width: 8),
             Expanded(child: Text(text)),
             if (!sync.canSync) ...[
@@ -406,33 +401,21 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       MaterialPageRoute(builder: (_) => const AccountScreen()),
     );
     if (!mounted) return;
-    setState(() {});
-  }
-
-  Future<void> _syncNow() async {
     final sync = SupabaseSyncService.instance;
     if (!sync.canSync) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Entre na mesma conta no celular e no computador.'),
-        ),
-      );
+      setState(() {});
       return;
     }
-    setState(() => _syncing = true);
+    setState(() => _loadingRemote = true);
     try {
-      final count = await widget.store.syncFromRemote(widget.unit.beds);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sincronização concluída ($count registros).')),
-      );
+      await widget.store.syncFromRemote(widget.unit.beds);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao sincronizar: $error')),
+        SnackBar(content: Text('Falha ao carregar o Supabase: $error')),
       );
     } finally {
-      if (mounted) setState(() => _syncing = false);
+      if (mounted) setState(() => _loadingRemote = false);
     }
   }
 
