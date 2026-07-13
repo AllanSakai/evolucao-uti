@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../data/icu_units_data.dart';
 import '../services/supabase_config.dart';
+import '../services/ward_access_service.dart';
 import '../widgets/theme_toggle_button.dart';
+import 'user_management_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -118,7 +121,7 @@ class _AccountScreenState extends State<AccountScreen> {
         email: _email.text.trim(),
         password: _password.text,
       );
-    }, 'Login realizado.');
+    }, 'Login realizado.', afterSuccess: _promptAssumedUnit);
   }
 
   Future<void> _signUp() async {
@@ -142,12 +145,13 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _authAction(
-    Future<void> Function() action,
-    String successMessage,
-  ) async {
+      Future<void> Function() action, String successMessage,
+      {Future<void> Function()? afterSuccess}) async {
     setState(() => _loading = true);
     try {
       await action();
+      if (!mounted) return;
+      await afterSuccess?.call();
       if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,6 +165,40 @@ class _AccountScreenState extends State<AccountScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _promptAssumedUnit() async {
+    if (SupabaseConfig.isPrivilegedUser) return;
+    final assumed = await WardAccessService.instance.assumedUnitCode();
+    if (!mounted || assumed != null) return;
+    final selected = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Qual ala você irá assumir?'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final unit in icuUnits)
+                ListTile(
+                  leading: Icon(
+                    assumed == unit.code
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                  ),
+                  title: Text(unit.name),
+                  subtitle: Text('${unit.beds.length} boxes'),
+                  onTap: () => Navigator.of(context).pop(unit.code),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null) return;
+    await WardAccessService.instance.assumeUnit(selected);
   }
 }
 
@@ -195,8 +233,28 @@ class _SignedIn extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 12),
+            if (SupabaseConfig.isPrivilegedUser) ...[
+              const Divider(),
+              const SizedBox(height: 12),
+              Text(
+                'Administração',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const UserManagementScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.manage_accounts_outlined),
+                label: const Text('Gerenciar usuários'),
+              ),
+              const SizedBox(height: 8),
+            ],
             OutlinedButton.icon(
               onPressed: () async {
+                await WardAccessService.instance.clearCurrentUser();
                 await SupabaseConfig.client!.auth.signOut();
                 if (context.mounted) Navigator.of(context).pop();
               },

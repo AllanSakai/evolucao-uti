@@ -13,10 +13,16 @@ import 'evolution_form_screen.dart';
 import 'evolution_preview_screen.dart';
 
 class ShiftRoundScreen extends StatefulWidget {
-  const ShiftRoundScreen({required this.unit, required this.store, super.key});
+  const ShiftRoundScreen({
+    required this.unit,
+    required this.store,
+    this.readOnly = false,
+    super.key,
+  });
 
   final IcuUnit unit;
   final ShiftRoundStore store;
+  final bool readOnly;
 
   @override
   State<ShiftRoundScreen> createState() => _ShiftRoundScreenState();
@@ -56,7 +62,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
           ),
           IconButton(
             tooltip: 'Limpar ala',
-            onPressed: _clearUnit,
+            onPressed: widget.readOnly ? null : _clearUnit,
             icon: const Icon(Icons.delete_outline),
           ),
         ],
@@ -69,6 +75,10 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
               children: [
                 _syncStatusCard(),
+                if (widget.readOnly) ...[
+                  const SizedBox(height: 12),
+                  _readOnlyAccessCard(),
+                ],
                 const SizedBox(height: 12),
                 _unitSummaryCard(unitSummary),
                 const SizedBox(height: 22),
@@ -157,6 +167,7 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
     final checklist = _analysis.checklist(selected.evolutionData);
     final colorScheme = Theme.of(context).colorScheme;
     final statusColor = _statusColor(selected.status, colorScheme);
+    final canPreview = selected.evolutionData != null;
     return Card(
       margin: EdgeInsets.zero,
       child: Container(
@@ -221,12 +232,20 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                FilledButton.tonalIcon(
-                  onPressed: () => _annotate(selected),
-                  icon: const Icon(Icons.edit_note),
-                  label: Text(
-                      selected.evolutionData == null ? 'Anotar' : 'Continuar'),
-                ),
+                if (widget.readOnly)
+                  FilledButton.tonalIcon(
+                    onPressed: canPreview ? () => _preview(selected) : null,
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: const Text('Visualizar'),
+                  )
+                else
+                  FilledButton.tonalIcon(
+                    onPressed: () => _annotate(selected),
+                    icon: const Icon(Icons.edit_note),
+                    label: Text(selected.evolutionData == null
+                        ? 'Anotar'
+                        : 'Continuar'),
+                  ),
                 if (selected.evolutionData != null)
                   OutlinedButton.icon(
                     onPressed: () => _preview(selected),
@@ -537,49 +556,210 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
       builder: (_) => EvolutionPreviewScreen(
         data: data,
         bed: selected.bed,
+        readOnly: widget.readOnly,
         generatedText: EvolutionGenerator().generateSummary(
           data,
           bedLabel: selected.bed.displayName,
         ),
-        onConfirmed: () => widget.store.markCompleted(selected.bed.id),
+        onConfirmed: widget.readOnly
+            ? null
+            : () => widget.store.markCompleted(selected.bed.id),
       ),
     ));
   }
 
   void _showDiuresisAndBalanceSummary() {
-    final rows = widget.store.beds.map((selected) {
-      final data = selected.evolutionData;
-      final diuresis = data == null
-          ? 'não preenchida'
-          : data.diuresisType == DiuresisType.ausente
-              ? 'ausente'
-              : data.diuresisVolume?.trim().isNotEmpty == true
-                  ? '${data.diuresisVolume} mL / ${data.diuresisPeriod ?? "período não informado"}'
-                  : data.diuresisType == DiuresisType.espontanea
-                      ? 'espontânea, não quantificada'
-                      : 'SVD, não quantificada';
-      final balance = data?.fluidBalance?.trim().isNotEmpty == true
-          ? '${data!.fluidBalance} mL / ${data.fluidBalancePeriod ?? "período não informado"}'
-          : 'não quantificado';
-      return '${selected.bed.displayName}\nDiurese: $diuresis\nBH: $balance';
-    }).join('\n\n');
+    final reports = widget.store.beds.map(_diuresisBalanceReport).toList();
+    final filled = reports.where((report) => report.hasData).length;
+    final quantifiedDiuresis =
+        reports.where((report) => report.diuresisVolume != null).length;
+    final lowDiuresis = reports.where((report) => report.lowDiuresis).length;
+    final positiveBalance =
+        reports.where((report) => (report.balanceValue ?? 0) > 0).length;
+    final negativeBalance =
+        reports.where((report) => (report.balanceValue ?? 0) < 0).length;
+    final missingBalance = reports
+        .where((report) => report.hasData && report.balanceValue == null)
+        .length;
+    final rows = reports.map((report) => report.asText()).join('\n\n');
+    final summary =
+        'Leitos preenchidos: $filled/${reports.length} | Diurese quantificada: $quantifiedDiuresis | Diurese baixa: $lowDiuresis | BH +: $positiveBalance | BH -: $negativeBalance | BH pendente: $missingBalance';
 
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Diurese e BH da ala'),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: SingleChildScrollView(child: SelectableText(rows)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return AlertDialog(
+          title: const Text('Diurese e BH da ala'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _summaryPill('Preenchidos', '$filled/${reports.length}'),
+                      _summaryPill('Diurese quant.', '$quantifiedDiuresis'),
+                      if (lowDiuresis > 0)
+                        _summaryPill('Diurese baixa', '$lowDiuresis'),
+                      if (positiveBalance > 0)
+                        _summaryPill('BH +', '$positiveBalance'),
+                      if (negativeBalance > 0)
+                        _summaryPill('BH -', '$negativeBalance'),
+                      if (missingBalance > 0)
+                        _summaryPill('BH pendente', '$missingBalance'),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: .45),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SelectableText(
+                        '$summary\n\n$rows',
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.35),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  _DiuresisBalanceReport _diuresisBalanceReport(SelectedBed selected) {
+    final data = selected.evolutionData;
+    if (data == null) {
+      return _DiuresisBalanceReport(
+        bedLabel: selected.bed.displayName,
+        diuresis: 'não preenchida',
+        balance: 'não preenchido',
+        status: 'pendente',
+      );
+    }
+
+    final diuresisVolume = _parseNumber(data.diuresisVolume);
+    final diuresisPeriod = _parseNumber(data.diuresisPeriod);
+    final weight = _parseNumber(data.weight);
+    final mlKgHour = diuresisVolume != null &&
+            diuresisPeriod != null &&
+            diuresisPeriod > 0 &&
+            weight != null &&
+            weight > 0
+        ? diuresisVolume / diuresisPeriod / weight
+        : null;
+    final lowDiuresis = mlKgHour != null && mlKgHour < 0.5;
+    final balanceValue = _parseNumber(data.fluidBalance);
+    final balanceStatus = balanceValue == null
+        ? 'BH pendente'
+        : balanceValue > 0
+            ? 'BH positivo'
+            : balanceValue < 0
+                ? 'BH negativo'
+                : 'BH neutro';
+    final diuresisStatus = data.diuresisType == DiuresisType.ausente
+        ? 'diurese ausente'
+        : lowDiuresis
+            ? 'diurese baixa'
+            : diuresisVolume != null
+                ? 'diurese quantificada'
+                : 'diurese não quantificada';
+
+    return _DiuresisBalanceReport(
+      bedLabel: selected.bed.displayName,
+      diuresis: _formatDiuresis(data, mlKgHour),
+      balance: _formatBalance(data),
+      status: '$diuresisStatus; $balanceStatus',
+      diuresisVolume: diuresisVolume,
+      balanceValue: balanceValue,
+      lowDiuresis: lowDiuresis,
+    );
+  }
+
+  String _formatDiuresis(EvolutionData data, double? mlKgHour) {
+    final period = data.diuresisPeriod?.trim().isNotEmpty == true
+        ? data.diuresisPeriod!.trim()
+        : 'período não informado';
+    final appearance = data.diuresisAppearance?.trim().isNotEmpty == true
+        ? ' | aspecto: ${data.diuresisAppearance!.trim()}'
+        : '';
+    final rate = mlKgHour == null
+        ? ''
+        : ' | ${mlKgHour.toStringAsFixed(2).replaceAll('.', ',')} mL/kg/h';
+
+    if (data.diuresisType == DiuresisType.ausente) return 'ausente$appearance';
+    if (data.diuresisVolume?.trim().isNotEmpty == true) {
+      final route =
+          data.diuresisType == DiuresisType.svd ? 'SVD' : 'espontânea';
+      return '$route: ${data.diuresisVolume!.trim()} mL / $period$rate$appearance';
+    }
+    if (data.diuresisType == DiuresisType.espontanea) {
+      return 'espontânea, não quantificada$appearance';
+    }
+    if (data.diuresisType == DiuresisType.svd) {
+      return 'SVD, não quantificada$appearance';
+    }
+    return 'não informada$appearance';
+  }
+
+  String _formatBalance(EvolutionData data) {
+    final balance = data.fluidBalance?.trim();
+    if (balance == null || balance.isEmpty) return 'não quantificado';
+    final period = data.fluidBalancePeriod?.trim().isNotEmpty == true
+        ? data.fluidBalancePeriod!.trim()
+        : 'período não informado';
+    final value = _signedVolume(balance);
+    final parsed = _parseNumber(balance);
+    final trend = parsed == null
+        ? ''
+        : parsed > 0
+            ? ' | retenção líquida'
+            : parsed < 0
+                ? ' | balanço negativo'
+                : ' | neutro';
+    return '$value mL / $period$trend';
+  }
+
+  Widget _summaryPill(String label, String value) {
+    return Chip(
+      visualDensity: VisualDensity.compact,
+      label: Text('$label: $value'),
+    );
+  }
+
+  double? _parseNumber(String? value) {
+    final clean =
+        value?.trim().replaceAll(RegExp(r'[^0-9,.-]'), '').replaceAll(',', '.');
+    if (clean == null || clean.isEmpty) return null;
+    return double.tryParse(clean);
+  }
+
+  String _signedVolume(String value) {
+    final clean = value.trim();
+    if (clean.startsWith('+') || clean.startsWith('-')) return clean;
+    final parsed = _parseNumber(clean);
+    if (parsed == null || parsed == 0) return clean;
+    return '+$clean';
   }
 
   Widget _syncStatusCard() {
@@ -620,6 +800,28 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                 child: const Text('Entrar'),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _readOnlyAccessCard() {
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: colors.surfaceContainerHighest.withValues(alpha: .45),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline, color: colors.onSurfaceVariant),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Você pode consultar esta ala, mas edição e limpeza ficam bloqueadas porque ela não é a ala assumida no plantão.',
+              ),
+            ),
           ],
         ),
       ),
@@ -697,4 +899,33 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
         BedProgressStatus.inProgress => colorScheme.tertiary,
         BedProgressStatus.completed => colorScheme.primary,
       };
+}
+
+class _DiuresisBalanceReport {
+  const _DiuresisBalanceReport({
+    required this.bedLabel,
+    required this.diuresis,
+    required this.balance,
+    required this.status,
+    this.diuresisVolume,
+    this.balanceValue,
+    this.lowDiuresis = false,
+  });
+
+  final String bedLabel;
+  final String diuresis;
+  final String balance;
+  final String status;
+  final double? diuresisVolume;
+  final double? balanceValue;
+  final bool lowDiuresis;
+
+  bool get hasData => status != 'pendente';
+
+  String asText() {
+    return '$bedLabel\n'
+        'Diurese: $diuresis\n'
+        'BH: $balance\n'
+        'Status: $status';
+  }
 }

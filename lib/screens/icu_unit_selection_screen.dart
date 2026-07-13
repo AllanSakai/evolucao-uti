@@ -8,6 +8,7 @@ import '../models/icu_unit.dart';
 import '../services/shift_round_store.dart';
 import '../services/supabase_config.dart';
 import '../services/supabase_sync_service.dart';
+import '../services/ward_access_service.dart';
 import '../widgets/theme_toggle_button.dart';
 import 'account_screen.dart';
 import 'certificate_screen.dart';
@@ -25,13 +26,18 @@ class IcuUnitSelectionScreen extends StatefulWidget {
 
 class _IcuUnitSelectionScreenState extends State<IcuUnitSelectionScreen> {
   StreamSubscription<AuthState>? _authSubscription;
+  String? _assumedUnitCode;
+  bool _checkingAccess = false;
+  bool _promptOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _loadAssumedUnit();
     _authSubscription =
         SupabaseConfig.client?.auth.onAuthStateChange.listen((_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      _loadAssumedUnit(promptIfMissing: false);
     });
   }
 
@@ -80,8 +86,10 @@ class _IcuUnitSelectionScreenState extends State<IcuUnitSelectionScreen> {
                       crossAxisSpacing: 12,
                     ),
                     itemCount: icuUnits.length,
-                    itemBuilder: (context, index) =>
-                        _UnitCard(unit: icuUnits[index]),
+                    itemBuilder: (context, index) => _UnitCard(
+                      unit: icuUnits[index],
+                      assumedUnitCode: _assumedUnitCode,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -191,14 +199,75 @@ class _IcuUnitSelectionScreenState extends State<IcuUnitSelectionScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AccountScreen()),
     );
-    if (mounted) setState(() {});
+    if (mounted) _loadAssumedUnit(promptIfMissing: true);
+  }
+
+  Future<void> _loadAssumedUnit({bool promptIfMissing = true}) async {
+    if (_checkingAccess) return;
+    _checkingAccess = true;
+    final assumed = await WardAccessService.instance.assumedUnitCode();
+    if (!mounted) return;
+    setState(() => _assumedUnitCode = assumed);
+    _checkingAccess = false;
+    if (promptIfMissing &&
+        SupabaseSyncService.instance.canSync &&
+        !SupabaseConfig.isPrivilegedUser &&
+        assumed == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _promptAssumedUnit();
+      });
+    }
+  }
+
+  Future<void> _promptAssumedUnit() async {
+    if (_promptOpen) return;
+    _promptOpen = true;
+    final selected = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Qual ala você irá assumir?'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final unit in icuUnits)
+                ListTile(
+                  leading: Icon(
+                    _assumedUnitCode == unit.code
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                  ),
+                  title: Text(unit.name),
+                  subtitle: Text('${unit.beds.length} boxes'),
+                  onTap: () => Navigator.of(context).pop(unit.code),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    _promptOpen = false;
+    if (selected == null) return;
+    await _setAssumedUnit(selected);
+  }
+
+  Future<void> _setAssumedUnit(String unitCode) async {
+    await WardAccessService.instance.assumeUnit(unitCode);
+    if (!mounted) return;
+    setState(() => _assumedUnitCode = unitCode);
   }
 }
 
 class _UnitCard extends StatefulWidget {
-  const _UnitCard({required this.unit});
+  const _UnitCard({
+    required this.unit,
+    required this.assumedUnitCode,
+  });
 
   final IcuUnit unit;
+  final String? assumedUnitCode;
 
   @override
   State<_UnitCard> createState() => _UnitCardState();
@@ -210,6 +279,11 @@ class _UnitCardState extends State<_UnitCard> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final signedIn = SupabaseSyncService.instance.canSync;
+    final privileged = SupabaseConfig.isPrivilegedUser;
+    final isAssumed = widget.assumedUnitCode == widget.unit.code;
+    final readOnly =
+        signedIn && !privileged && widget.assumedUnitCode != null && !isAssumed;
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -243,7 +317,13 @@ class _UnitCardState extends State<_UnitCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${widget.unit.beds.length} leitos',
+                      readOnly
+                          ? '${widget.unit.beds.length} leitos - somente leitura'
+                          : privileged
+                              ? '${widget.unit.beds.length} leitos - acesso total'
+                              : isAssumed
+                                  ? '${widget.unit.beds.length} leitos - ala assumida'
+                                  : '${widget.unit.beds.length} leitos',
                       maxLines: 1,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colors.onSurfaceVariant,
@@ -259,7 +339,7 @@ class _UnitCardState extends State<_UnitCard> {
                 )
               else
                 Icon(
-                  Icons.chevron_right,
+                  readOnly ? Icons.visibility_outlined : Icons.chevron_right,
                   size: 20,
                   color: colors.onSurfaceVariant,
                 ),
@@ -284,7 +364,14 @@ class _UnitCardState extends State<_UnitCard> {
       return;
     }
     await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ShiftRoundScreen(unit: widget.unit, store: store),
+      builder: (_) => ShiftRoundScreen(
+        unit: widget.unit,
+        store: store,
+        readOnly: SupabaseSyncService.instance.canSync &&
+            !SupabaseConfig.isPrivilegedUser &&
+            widget.assumedUnitCode != null &&
+            widget.assumedUnitCode != widget.unit.code,
+      ),
     ));
     if (mounted) setState(() => _loading = false);
   }

@@ -44,6 +44,7 @@ jobs:
           --no-wasm-dry-run
           --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
           --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          --dart-define=PRIVILEGED_EMAILS="${{ secrets.PRIVILEGED_EMAILS }}"
 
       - name: Disable Jekyll
         run: touch build/web/.nojekyll

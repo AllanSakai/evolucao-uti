@@ -10,6 +10,7 @@ class EvolutionPreviewScreen extends StatefulWidget {
     required this.data,
     this.bed,
     this.generatedText,
+    this.readOnly = false,
     this.onConfirmed,
     super.key,
   });
@@ -17,6 +18,7 @@ class EvolutionPreviewScreen extends StatefulWidget {
   final EvolutionData data;
   final Bed? bed;
   final String? generatedText;
+  final bool readOnly;
   final VoidCallback? onConfirmed;
 
   @override
@@ -67,13 +69,13 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
                     padding: const EdgeInsets.all(18),
                     child: TextField(
                       controller: _controller,
-                      readOnly: !_editing,
+                      readOnly: widget.readOnly || !_editing,
                       minLines: 14,
                       maxLines: null,
                       decoration: InputDecoration(
                         labelText:
                             _editing ? 'Edição manual' : 'Resumo para GPT',
-                        border: _editing
+                        border: _editing && !widget.readOnly
                             ? const OutlineInputBorder()
                             : InputBorder.none,
                       ),
@@ -91,13 +93,17 @@ class _EvolutionPreviewScreenState extends State<EvolutionPreviewScreen> {
                       label: const Text('Copiar resumo'),
                     ),
                     OutlinedButton.icon(
-                      onPressed: () => setState(() => _editing = !_editing),
+                      onPressed: widget.readOnly
+                          ? null
+                          : () => setState(() => _editing = !_editing),
                       icon: Icon(_editing ? Icons.check : Icons.edit_outlined),
                       label: Text(
                           _editing ? 'Concluir edição' : 'Editar manualmente'),
                     ),
                     FilledButton.icon(
-                      onPressed: _confirmed ? null : _confirmEvolution,
+                      onPressed: widget.readOnly || _confirmed
+                          ? null
+                          : _confirmEvolution,
                       icon: const Icon(Icons.check_circle_outline),
                       label:
                           Text(_confirmed ? 'Resumo confirmado' : 'Confirmar'),

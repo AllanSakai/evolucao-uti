@@ -143,7 +143,7 @@ class EvolutionGenerator {
       if (_clean(data.diuresisAppearance) != null)
         'Aspecto da diurese: ${_clean(data.diuresisAppearance)}.',
       if (_clean(data.fluidBalance) != null)
-        'Balanço hídrico: ${_clean(data.fluidBalance)} mL no período ${_clean(data.fluidBalancePeriod) ?? 'não informado'}.',
+        'Balanço hídrico: ${_fluidBalancePhrase(data, includeInterpretation: true)}.',
     ]);
 
     section('EVACUAÇÃO', [
@@ -284,14 +284,9 @@ class EvolutionGenerator {
       renal.add(_diuresis(data.diuresisType!, standardAwake));
     }
     _addIf(renal, data.diuresisAppearance, (v) => v);
-    _addIf(renal, data.fluidBalance, (v) {
-      final period = _clean(data.fluidBalancePeriod);
-      final signal = v.trim().startsWith('-') ? 'NEGATIVO' : 'POSITIVO';
-      final normalized = v.trim().startsWith('+') || v.trim().startsWith('-')
-          ? v.trim()
-          : '+${v.trim()}';
-      return 'BH $signal EM $normalized ML${period == null ? '' : ' NAS ULTIMAS $period'}';
-    });
+    if (_clean(data.fluidBalance) != null) {
+      renal.add(_fluidBalancePhrase(data));
+    }
     if (_clean(data.fluidBalance) == null) renal.add('BH NÃO QUANTIFICADO');
     _sentence(sentences, renal);
 
@@ -533,6 +528,42 @@ class EvolutionGenerator {
       return null;
     }
     return (volume / period / weight).toStringAsFixed(2).replaceAll('.', ',');
+  }
+
+  String _fluidBalancePhrase(
+    EvolutionData data, {
+    bool includeInterpretation = false,
+  }) {
+    final value = _clean(data.fluidBalance)!;
+    final period = _clean(data.fluidBalancePeriod);
+    final parsed = _parseNumber(value);
+    final normalized = _signedVolume(value);
+    final signal = parsed == null
+        ? (value.trim().startsWith('-') ? 'NEGATIVO' : 'POSITIVO')
+        : parsed < 0
+            ? 'NEGATIVO'
+            : parsed > 0
+                ? 'POSITIVO'
+                : 'NEUTRO';
+    final periodText =
+        period == null ? ' NO PERIODO INFORMADO' : ' NAS ULTIMAS $period';
+    final interpretation =
+        includeInterpretation ? _fluidBalanceInterpretation(parsed) : null;
+    return 'BH $signal EM $normalized ML$periodText'
+        '${interpretation == null ? '' : ' ($interpretation)'}';
+  }
+
+  String _signedVolume(String value) {
+    final clean = value.trim();
+    if (clean.startsWith('+') || clean.startsWith('-')) return clean;
+    final parsed = _parseNumber(clean);
+    if (parsed == null || parsed == 0) return clean;
+    return '+$clean';
+  }
+
+  String? _fluidBalanceInterpretation(double? value) {
+    if (value == null || value == 0) return null;
+    return value > 0 ? 'RETENCAO HIDRICA LIQUIDA' : 'BALANCO LIQUIDO NEGATIVO';
   }
 
   double? _parseNumber(String? value) {
