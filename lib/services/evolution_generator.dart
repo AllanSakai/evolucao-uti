@@ -6,194 +6,266 @@ class EvolutionGenerator {
     final lines = <String>[
       'RESUMO ESTRUTURADO PARA GERAR EVOLUÇÃO MÉDICA DE UTI',
       '',
-      if (_clean(bedLabel) != null) ...[
-        'IDENTIFICAÇÃO DO LEITO: ${_clean(bedLabel)}.',
-        'FORMATAÇÃO OBRIGATÓRIA: A PRIMEIRA LINHA DA RESPOSTA DEVE SER EXATAMENTE "### ${_clean(bedLabel)}". NÃO OMITA NEM ALTERE ESTE CABEÇALHO.',
-        '',
-      ],
-      'MODELO A USAR: ${_referenceModelName(data)}.',
-      'COMPARE A EVOLUÇÃO FINAL COM O MODELO INDICADO E COLOQUE EM NEGRITO APENAS OS TRECHOS ALTERADOS, SUBSTITUÍDOS OU ACRESCENTADOS EM RELAÇÃO AO MODELO. MANTENHA SEM NEGRITO OS TRECHOS IDÊNTICOS AO MODELO.',
-      'REGRA DE MARKDOWN: CADA TRECHO EM NEGRITO DEVE ESTAR PAREADO NO FORMATO **TRECHO ALTERADO**. NUNCA COLE ASTERISCOS EM PALAVRAS OU PONTUAÇÕES MANTIDAS DO MODELO. QUANDO UMA FRASE TIVER PARTE MANTIDA E PARTE ALTERADA, ESCREVA A PARTE MANTIDA NORMALMENTE, INSIRA A PONTUAÇÃO NORMALMENTE E ABRA O NEGRITO APENAS ANTES DO TRECHO ALTERADO.',
-      'ANTES DE RESPONDER, CONFIRA SE NÃO HÁ ** SOLTO OU MAL PAREADO.',
-      'INTERPRETAÇÃO TEMPORAL: O PADRÃO PRESSÓRICO (NORMOTENSO, HIPOTENSO, HIPERTENSO OU TENDENDO) REPRESENTA A TENDÊNCIA OBSERVADA DURANTE O PERÍODO; PA, PAM, FC, TEMPERATURA E SPO2 NUMÉRICAS SÃO MEDIDAS PONTUAIS NO MOMENTO DA AVALIAÇÃO. PRESERVE AS DUAS INFORMAÇÕES, DEIXE ESSA TEMPORALIDADE CLARA NA REDAÇÃO E NÃO AS TRATE COMO CONTRADIÇÃO APENAS PORQUE UM VALOR PONTUAL DIFERE DA TENDÊNCIA DO PERÍODO.',
-      '',
     ];
 
-    void section(String title, List<String> items) {
-      final filtered = items.where((item) => item.trim().isNotEmpty).toList();
-      if (filtered.isEmpty) return;
-      lines
-        ..add(title)
-        ..addAll(filtered.map((item) => '- $item'))
-        ..add('');
+    void line(String label, String? value) {
+      final clean = _clean(value);
+      if (clean != null) lines.add('$label: $clean');
     }
 
-    section('IDENTIFICAÇÃO / CONTEXTO', [
-      'Sexo: ${data.sex == Sex.feminino ? 'feminino' : 'masculino'}.',
-      'Local: ${data.local}.',
-      if (_clean(data.weight) != null) 'Peso: ${_clean(data.weight)} kg.',
-      if (data.neurologicalState != null)
-        'Estado neurológico: ${_neurological(data.neurologicalState!, data.sex == Sex.feminino)}.',
-      if (_clean(data.rass) != null) 'RASS: ${_clean(data.rass)}.',
-    ]);
+    void space() {
+      if (lines.isNotEmpty && lines.last.isNotEmpty) lines.add('');
+    }
 
-    section('DADOS ADICIONAIS COLETADOS / VALIDAÇÕES POSSÍVEIS', [
-      if (_clean(data.meanArterialPressure) != null)
-        'PAM coletada: ${_clean(data.meanArterialPressure)} mmHg.',
-      if (_clean(data.weight) != null)
-        'Peso coletado para cálculo de diurese: ${_clean(data.weight)} kg.',
-      if (_clean(data.rass) != null) 'RASS coletado: ${_clean(data.rass)}.',
-      if (data.ventilatorSynchrony != null &&
-          data.ventilationMode?.toUpperCase() != 'PSV')
-        'Sincronia com ventilador coletada: ${data.ventilatorSynchrony! ? 'sincrônico' : 'assincrônico'}.',
-      if (_clean(data.lowerLimbsExam) != null)
-        'Edema/alterações em MMII coletados: ${_clean(data.lowerLimbsExam)}.',
-      if (_clean(data.upperLimbsExam) != null)
-        'Edema em MMSS coletado: ${_clean(data.upperLimbsExam)}.',
-      if (_clean(data.meanArterialPressure) != null &&
-          data.vasoactiveSupport == VasoactiveSupport.comDva)
-        'Como há DVA e PAM informada, avaliar redação: hemodinamicamente estável às custas de DVA / dependente de DVA mantendo PAM adequada.',
-      if (_clean(data.oxygenSaturation) != null)
-        'SpO2 disponível para avaliar hipoxemia/saturação limítrofe.',
-      if (_clean(data.diuresisVolume) != null &&
-          _clean(data.diuresisPeriod) != null &&
-          _clean(data.weight) != null)
-        'Há dados suficientes para calcular mL/kg/h da diurese.',
-    ]);
+    line('IDENTIFICAÇÃO DO LEITO', bedLabel);
+    line('SEXO', data.sex == Sex.feminino ? 'F' : 'M');
+    if (data.neurologicalState != null) {
+      line('ESTADO',
+          _neurological(data.neurologicalState!, data.sex == Sex.feminino));
+    }
+    line('PESO',
+        _clean(data.weight) == null ? null : '${_clean(data.weight)} KG');
 
-    section('RESPIRATÓRIO / OXIGENAÇÃO / VM', [
-      if (data.ventilatorySupport != null)
-        'Suporte ventilatório: ${_support(data.ventilatorySupport!)}.',
-      if (_clean(data.ventilationMode) != null)
-        'Modo ventilatório: ${_clean(data.ventilationMode)}.',
-      if (_clean(data.respiratoryRate) != null)
-        'FR: ${_clean(data.respiratoryRate)}.',
-      if (_clean(data.tidalVolume) != null)
-        'VT/VC: ${_clean(data.tidalVolume)} mL.',
-      if (_clean(data.controlledPressure) != null)
-        'PC: ${_clean(data.controlledPressure)} cmH2O.',
-      if (_clean(data.pressureSupport) != null)
-        'PS: ${_clean(data.pressureSupport)} cmH2O.',
-      if (_clean(data.fio2) != null) 'FiO2: ${_clean(data.fio2)}%.',
-      if (_clean(data.peep) != null) 'PEEP: ${_clean(data.peep)} cmH2O.',
-      if (_clean(data.oxygenFlow) != null)
-        'Vazão de O2 atual: ${_clean(data.oxygenFlow)} L/min.',
-      if (_clean(data.homeOxygenFlow) != null)
-        'O2 domiciliar: sim, vazão habitual ${_clean(data.homeOxygenFlow)} L/min.',
-      if (_clean(data.oxygenSaturation) != null)
-        'SpO2: ${_clean(data.oxygenSaturation)}%.',
-      if (data.ventilatorSynchrony != null &&
-          data.ventilationMode?.toUpperCase() != 'PSV')
-        'Sincronia com ventilador: ${data.ventilatorSynchrony! ? 'sincrônico' : 'assincrônico'}.',
-    ]);
+    space();
+    line('RESP', _summaryRespiratory(data));
 
-    section('HEMODINÂMICA / DVA', [
-      if (data.hemodynamicState != null)
-        'Hemodinâmica: ${data.hemodynamicState == HemodynamicState.estavel ? 'estável' : 'instável'}.',
-      if (data.bloodPressureState != null)
-        'Tendência pressórica observada durante o período: ${_bloodPressure(data.bloodPressureState!, data.sex == Sex.feminino)}.',
-      if (_clean(data.bloodPressure) != null)
-        'PA pontual no momento da avaliação: ${_clean(data.bloodPressure)} mmHg.',
-      if (_clean(data.meanArterialPressure) != null)
-        'PAM pontual no momento da avaliação: ${_clean(data.meanArterialPressure)} mmHg.',
-      if (_clean(data.heartRate) != null)
-        'FC pontual no momento da avaliação: ${_clean(data.heartRate)} bpm.',
-      if (data.vasoactiveSupport != null)
-        'DVA: ${data.vasoactiveSupport == VasoactiveSupport.comDva ? 'com DVA' : 'sem DVA'}.',
-      if (data.vasoactiveDrugRates.isNotEmpty)
-        'Drogas vasoativas: ${_formatDrugRates(data.vasoactiveDrugRates, vasoactiveDrugOptions)}.',
-      if (_clean(data.vasoactiveDrugs) != null)
-        'Drogas vasoativas livres: ${_clean(data.vasoactiveDrugs)}.',
-    ]);
+    space();
+    line('HEMO', _summaryHemodynamics(data));
+    line('PA PONTUAL', _withOptionalUnit(data.bloodPressure, 'MMHG'));
+    line('PAM PONTUAL', _withOptionalUnit(data.meanArterialPressure, 'MMHG'));
+    line('FC', _withOptionalUnit(data.heartRate, 'BPM'));
+    if (data.vasoactiveDrugRates.isNotEmpty) {
+      line('DVA',
+          _formatDrugRates(data.vasoactiveDrugRates, vasoactiveDrugOptions));
+    } else {
+      line('DVA', data.vasoactiveDrugs);
+    }
+    if (data.sedationDrugRates.isNotEmpty) {
+      line('SEDOANALGESIA',
+          _formatDrugRates(data.sedationDrugRates, sedationDrugOptions));
+    } else {
+      line('SEDOANALGESIA', data.sedoanalgesia);
+    }
+    line('BIC', data.continuousInfusions);
 
-    section('TEMPERATURA', [
-      if (data.temperatureState != null)
-        'Estado termico: ${switch (data.temperatureState!) {
-          TemperatureState.afebril => 'afebril',
-          TemperatureState.subfebril => 'subfebril',
-          TemperatureState.febril => 'febril',
-        }}.',
-      if (_clean(data.measuredTemperature) != null)
-        'Temperatura medida: ${_clean(data.measuredTemperature)} graus Celsius.',
-    ]);
+    space();
+    line('TEMP', _summaryTemperature(data));
 
-    section('DIETA / GASTROINTESTINAL / GLICEMIA', [
-      if (data.dietRoute != null) 'Dieta: ${_diet(data.dietRoute!)}.',
-      if (data.nausea) 'Náuseas: sim.',
-      if (data.vomiting) 'Vômitos: sim.',
-      if (data.gastricStasis) 'Estase: sim.',
-      if (!data.nausea && !data.vomiting && !data.gastricStasis)
-        'Sintomas gastrointestinais marcados: nenhum.',
-      if (_clean(data.hgtMinimum) != null || _clean(data.hgtMaximum) != null)
-        'HGT: ${_range(data.hgtMinimum, data.hgtMaximum)} mg/dL.',
-    ]);
+    space();
+    line(
+        'DIETA', data.dietRoute == null ? null : _summaryDiet(data.dietRoute!));
+    line('GI', _summaryGastrointestinal(data));
+    line('HGT', _summaryHgt(data));
 
-    final mlKgHour = _diuresisMlKgHour(data);
-    section('DIURESE / BALANÇO HÍDRICO', [
-      if (data.diuresisType != null)
-        'Tipo de diurese: ${_diuresis(data.diuresisType!, false)}.',
-      if (_clean(data.diuresisVolume) != null)
-        'Volume de diurese: ${_clean(data.diuresisVolume)} mL.',
-      if (_clean(data.diuresisPeriod) != null)
-        'Período da diurese: últimas ${_clean(data.diuresisPeriod)}.',
-      if (mlKgHour != null)
-        'Diurese calculada: aproximadamente $mlKgHour mL/kg/h.',
-      if (_clean(data.weight) != null)
-        'Peso usado para cálculo: ${_clean(data.weight)} kg.',
-      if (_clean(data.diuresisAppearance) != null)
-        'Aspecto da diurese: ${_clean(data.diuresisAppearance)}.',
-      if (_clean(data.fluidBalance) != null)
-        'Balanço hídrico: ${_clean(data.fluidBalance)} mL no período ${_clean(data.fluidBalancePeriod) ?? 'não informado'}.',
-    ]);
+    space();
+    line('DIURESE', _summaryDiuresis(data));
+    final diuresisPeriod = _clean(data.diuresisPeriod);
+    final balancePeriod = _clean(data.fluidBalancePeriod);
+    if (diuresisPeriod != null &&
+        balancePeriod != null &&
+        diuresisPeriod != balancePeriod) {
+      line('PERÍODO DA DIURESE', diuresisPeriod);
+      line('PERÍODO DO BH', balancePeriod);
+    } else {
+      line('PERÍODO AVALIADO', diuresisPeriod ?? balancePeriod);
+    }
+    line(
+        'BH',
+        _clean(data.fluidBalance) == null
+            ? 'NÃO QUANTIFICADO'
+            : '${_clean(data.fluidBalance)} ML');
 
-    section('EVACUAÇÃO', [
-      if (data.bowelMovement != null)
-        'Evacuação: ${_bowel(data.bowelMovement!)}.',
-      if (data.bowelMovement != BowelMovement.ausentes &&
-          data.stoolPathologicalProducts != null)
-        'Produtos patológicos nas fezes: ${data.stoolPathologicalProducts == StoolPathologicalProducts.presentes ? 'presentes' : 'ausentes'}.',
-      if (_clean(data.stoolPathologicalDescription) != null)
-        'Descrição dos produtos patológicos: ${_clean(data.stoolPathologicalDescription)}.',
-    ]);
+    space();
+    line('EVACUAÇÃO', _summaryBowelMovement(data));
 
-    section('EXAME FÍSICO DIRIGIDO', [
-      if (_clean(data.generalCondition) != null)
-        'Estado geral: ${_clean(data.generalCondition)}.',
-      if (_clean(data.pulmonaryExam) != null)
-        'AP: ${_clean(data.pulmonaryExam)}.',
-      if (_clean(data.cardiovascularExam) != null)
-        'ACV: ${_clean(data.cardiovascularExam)}.',
-      if (_clean(data.abdominalExam) != null)
-        'Abdome: ${_clean(data.abdominalExam)}.',
-      if (_clean(data.lowerLimbsExam) != null)
-        'MMII: ${_clean(data.lowerLimbsExam)}.',
-      if (_clean(data.upperLimbsExam) != null)
-        'MMSS: ${_clean(data.upperLimbsExam)}.',
-      if (_clean(data.neurologicalExam) != null)
-        'Neuro: ${_clean(data.neurologicalExam)}.',
-    ]);
+    space();
+    line('GERAL', data.generalCondition);
+    line('AP', data.pulmonaryExam);
+    line('ACV', data.cardiovascularExam);
+    line('ABD', data.abdominalExam);
+    line('MMII', data.lowerLimbsExam);
+    line('MMSS', data.upperLimbsExam);
+    line(
+        'NEURO',
+        data.neurologicalExam ??
+            (_clean(data.rass) == null ? null : 'RASS ${_clean(data.rass)}'));
 
-    section('SEDOANALGESIA / INFUSÕES', [
-      if (data.sedationDrugRates.isNotEmpty)
-        'Sedação/analgesia: ${_formatDrugRates(data.sedationDrugRates, sedationDrugOptions)}.',
-      if (_clean(data.continuousInfusions) != null)
-        'BIC/infusões contínuas: ${_clean(data.continuousInfusions)}.',
-    ]);
+    space();
+    line('OBS', data.notes);
 
-    section('OBSERVAÇÕES LIVRES', [
-      if (_clean(data.notes) != null) _clean(data.notes)!,
-    ]);
-
-    return lines.join('\n').trim().toUpperCase();
+    while (lines.isNotEmpty && lines.last.isEmpty) {
+      lines.removeLast();
+    }
+    return lines.join('\n').toUpperCase();
   }
 
-  String _referenceModelName(EvolutionData data) {
-    final sedated = data.template == EvolutionTemplate.sedadoIotVm ||
-        data.neurologicalState == NeurologicalState.sedado;
-    if (sedated) return 'MODELO 3 — SEDADO/VM';
-    return data.sex == Sex.feminino
-        ? 'MODELO 2 — ACORDADA FEMININA'
-        : 'MODELO 1 — ACORDADO MASCULINO';
+  String? _summaryRespiratory(EvolutionData data) {
+    final support = data.ventilatorySupport;
+    final values = <String>[];
+    if (support != null) {
+      values.add(switch (support) {
+        VentilatorySupport.arAmbiente => 'AR AMBIENTE',
+        VentilatorySupport.cateterNasal => 'CATETER NASAL',
+        VentilatorySupport.mascara => 'MÁSCARA',
+        VentilatorySupport.vni => 'VNI',
+        VentilatorySupport.iotVm => 'IOT+VM',
+        VentilatorySupport.tqtVm => 'TQT+VM',
+      });
+    }
+    _addSummaryValue(values, 'MODO', data.ventilationMode);
+    _addSummaryValue(values, 'FR', data.respiratoryRate);
+    _addSummaryValue(values, 'VT', data.tidalVolume, unit: 'ML');
+    _addSummaryValue(values, 'FLUXO', data.inspiratoryFlow, unit: 'L/MIN');
+    _addSummaryValue(values, 'PC', data.controlledPressure, unit: 'CMH2O');
+    _addSummaryValue(values, 'TI', data.inspiratoryTime, unit: 'S');
+    _addSummaryValue(values, 'PS', data.pressureSupport, unit: 'CMH2O');
+    _addSummaryValue(values, 'TRIGGER', data.triggerSensitivity);
+    _addSummaryValue(values, 'CICLAGEM', data.cyclingCriterion, unit: '%');
+    _addSummaryValue(values, 'FIO2', data.fio2, unit: '%');
+    _addSummaryValue(values, 'PEEP', data.peep, unit: 'CMH2O');
+    _addSummaryValue(values, 'O2', data.oxygenFlow, unit: 'L/MIN');
+    _addSummaryValue(values, 'O2 DOMICILIAR', data.homeOxygenFlow,
+        unit: 'L/MIN');
+    _addSummaryValue(values, 'SPO2', data.oxygenSaturation, unit: '%');
+    if (data.ventilatorSynchrony != null &&
+        data.ventilationMode?.toUpperCase() != 'PSV') {
+      values.add(data.ventilatorSynchrony! ? 'SINCRÔNICO' : 'ASSINCRÔNICO');
+    }
+    return values.isEmpty ? null : values.join('; ');
+  }
+
+  String? _summaryHemodynamics(EvolutionData data) {
+    final values = <String>[];
+    if (data.hemodynamicState != null) {
+      values.add(data.hemodynamicState == HemodynamicState.estavel
+          ? 'ESTÁVEL'
+          : 'INSTÁVEL');
+    }
+    if (data.vasoactiveSupport != null) {
+      values.add(data.vasoactiveSupport == VasoactiveSupport.semDva
+          ? 'SEM DVA'
+          : 'COM DVA');
+    }
+    if (data.bloodPressureState != null) {
+      values.add(switch (data.bloodPressureState!) {
+        BloodPressureState.normotenso =>
+          data.sex == Sex.feminino ? 'NORMOTENSA' : 'NORMOTENSO',
+        BloodPressureState.hipotenso =>
+          data.sex == Sex.feminino ? 'HIPOTENSA' : 'HIPOTENSO',
+        BloodPressureState.hipertenso =>
+          data.sex == Sex.feminino ? 'HIPERTENSA' : 'HIPERTENSO',
+        BloodPressureState.tendendoHipotensao => 'TENDENDO À HIPOTENSÃO',
+        BloodPressureState.tendendoHipertensao => 'TENDENDO À HIPERTENSÃO',
+      });
+    }
+    return values.isEmpty ? null : values.join('; ');
+  }
+
+  String? _summaryTemperature(EvolutionData data) {
+    final values = <String>[];
+    if (data.temperatureState != null) {
+      values.add(switch (data.temperatureState!) {
+        TemperatureState.afebril => 'AFEBRIL',
+        TemperatureState.subfebril => 'SUBFEBRIL',
+        TemperatureState.febril => 'FEBRIL',
+      });
+    }
+    final measured = _clean(data.measuredTemperature);
+    if (measured != null) values.add('$measured °C');
+    return values.isEmpty ? null : values.join('; ');
+  }
+
+  String _summaryDiet(DietRoute route) => switch (route) {
+        DietRoute.vo => 'VO',
+        DietRoute.sne => 'SNE',
+        DietRoute.sng => 'SNG',
+        DietRoute.npt => 'NPT',
+        DietRoute.zero => 'ZERO',
+      };
+
+  String _summaryGastrointestinal(EvolutionData data) {
+    final values = <String>[];
+    if (data.nausea) values.add('NÁUSEAS');
+    if (data.vomiting) values.add('VÔMITOS');
+    if (data.gastricStasis) values.add('ESTASE');
+    final notes = _clean(data.gastrointestinalNotes);
+    if (notes != null) values.add(notes);
+    return values.isEmpty
+        ? 'SEM NÁUSEAS, VÔMITOS OU ESTASE'
+        : values.join('; ');
+  }
+
+  String? _summaryHgt(EvolutionData data) {
+    final range = _range(data.hgtMinimum, data.hgtMaximum);
+    if (range != null) return '$range MG/DL';
+    return _withOptionalUnit(data.capillaryGlucose, 'MG/DL');
+  }
+
+  String? _summaryDiuresis(EvolutionData data) {
+    if (data.diuresisType == null &&
+        _clean(data.diuresisVolume) == null &&
+        _clean(data.diuresisAppearance) == null) {
+      return null;
+    }
+    final values = <String>[];
+    if (data.diuresisType != null) {
+      values.add(switch (data.diuresisType!) {
+        DiuresisType.espontanea => 'ESPONTÂNEA',
+        DiuresisType.svd => 'SVD',
+        DiuresisType.ausente => 'AUSENTE',
+      });
+    }
+    final volume = _clean(data.diuresisVolume);
+    if (volume != null) {
+      values.add('$volume ML');
+    } else if (data.diuresisType != DiuresisType.ausente) {
+      values.add('NÃO QUANTIFICADA');
+    }
+    final appearance = _clean(data.diuresisAppearance);
+    if (appearance != null) values.add(appearance);
+    return values.join('; ');
+  }
+
+  String? _summaryBowelMovement(EvolutionData data) {
+    if (data.bowelMovement == null) return null;
+    final values = <String>[
+      switch (data.bowelMovement!) {
+        BowelMovement.presentes => 'PRESENTE',
+        BowelMovement.ausentes => 'AUSENTE',
+        BowelMovement.diarreia => 'DIARREIA',
+      }
+    ];
+    final days = _clean(data.daysSinceLastBowelMovement);
+    if (data.bowelMovement == BowelMovement.ausentes && days != null) {
+      values.add('HÁ $days DIAS');
+    }
+    if (data.bowelMovement != BowelMovement.ausentes &&
+        data.stoolPathologicalProducts != null) {
+      values.add(
+          data.stoolPathologicalProducts == StoolPathologicalProducts.presentes
+              ? 'COM PRODUTOS PATOLÓGICOS'
+              : 'SEM PRODUTOS PATOLÓGICOS');
+    }
+    final description = _clean(data.stoolPathologicalDescription);
+    if (description != null) values.add(description);
+    return values.join('; ');
+  }
+
+  String? _withOptionalUnit(String? value, String unit) {
+    final clean = _clean(value);
+    return clean == null ? null : '$clean $unit';
+  }
+
+  void _addSummaryValue(List<String> values, String label, String? value,
+      {String? unit}) {
+    final clean = _clean(value);
+    if (clean == null) return;
+    final suffix = unit == null
+        ? ''
+        : unit == '%'
+            ? '%'
+            : ' $unit';
+    values.add('$label $clean$suffix');
   }
 
   String generate(EvolutionData data) {
@@ -264,6 +336,7 @@ class EvolutionGenerator {
     } else if (standardAwake && data.dietRoute != null) {
       nutrition.add('SEM RELATO DE NAUSEAS OU VOMITOS');
     }
+    _addIf(nutrition, data.gastrointestinalNotes, (v) => v);
     final hgt = _range(data.hgtMinimum, data.hgtMaximum);
     if (hgt != null) nutrition.add('HGT ENTRE $hgt MG/DL');
     _addIf(nutrition, data.capillaryGlucose, (v) => 'HGT $v');
@@ -297,6 +370,9 @@ class EvolutionGenerator {
 
     final bowel = <String>[];
     if (data.bowelMovement != null) bowel.add(_bowel(data.bowelMovement!));
+    if (data.bowelMovement == BowelMovement.ausentes) {
+      _addIf(bowel, data.daysSinceLastBowelMovement, (v) => 'HA $v DIAS');
+    }
     if (data.bowelMovement != BowelMovement.ausentes &&
         data.stoolPathologicalProducts != null) {
       if (data.stoolPathologicalProducts ==

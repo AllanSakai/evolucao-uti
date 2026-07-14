@@ -242,27 +242,40 @@ void main() {
     expect(text, contains('BH NÃO QUANTIFICADO'));
   });
 
-  test('resumo exige cabecalho e negrito nas diferencas do modelo', () {
+  test('resumo usa a nova estrutura compacta', () {
     final summary = generator.generateSummary(
-      const EvolutionData(sex: Sex.masculino),
+      const EvolutionData(
+        sex: Sex.masculino,
+        neurologicalState: NeurologicalState.acordado,
+        ventilatorySupport: VentilatorySupport.arAmbiente,
+        oxygenSaturation: '97',
+        hemodynamicState: HemodynamicState.estavel,
+        vasoactiveSupport: VasoactiveSupport.semDva,
+        bloodPressureState: BloodPressureState.normotenso,
+        diuresisType: DiuresisType.espontanea,
+        diuresisPeriod: '18H',
+      ),
       bedLabel: 'UTI A - LEITO 3',
     );
     expect(summary, startsWith('RESUMO ESTRUTURADO'));
-    expect(summary, contains('MODELO A USAR: MODELO 1'));
     expect(summary, contains('IDENTIFICAÇÃO DO LEITO: UTI A - LEITO 3'));
-    expect(summary, contains('"### UTI A - LEITO 3"'));
-    expect(summary, contains('NÃO OMITA NEM ALTERE ESTE CABEÇALHO'));
-    expect(summary, contains('COLOQUE EM NEGRITO APENAS OS TRECHOS ALTERADOS'));
-    expect(summary, contains('NO FORMATO **TRECHO ALTERADO**'));
-    expect(summary, contains('SE NÃO HÁ ** SOLTO OU MAL PAREADO'));
-    expect(summary, contains('INTERPRETAÇÃO TEMPORAL'));
-    expect(summary, isNot(contains('INSTRUÇÃO PARA O GPT')));
-    expect(summary, isNot(contains('REGRAS DE PADRÃO')));
+    expect(summary, contains('SEXO: M'));
+    expect(summary, contains('ESTADO: ACORDADO'));
+    expect(summary, contains('RESP: AR AMBIENTE; SPO2 97%'));
+    expect(summary, contains('HEMO: ESTÁVEL; SEM DVA; NORMOTENSO'));
+    expect(summary, contains('DIURESE: ESPONTÂNEA; NÃO QUANTIFICADA'));
+    expect(summary, contains('PERÍODO AVALIADO: 18H'));
+    expect(summary, contains('BH: NÃO QUANTIFICADO'));
+    expect(summary, isNot(contains('MODELO A USAR')));
+    expect(summary, isNot(contains('FORMATAÇÃO OBRIGATÓRIA')));
   });
 
-  test('resumo seleciona modelo feminino e sedado', () {
+  test('resumo identifica sexo e estado sem declarar o modelo', () {
     final female = generator.generateSummary(
-      const EvolutionData(sex: Sex.feminino),
+      const EvolutionData(
+        sex: Sex.feminino,
+        neurologicalState: NeurologicalState.acordado,
+      ),
     );
     final sedated = generator.generateSummary(
       const EvolutionData(
@@ -270,8 +283,12 @@ void main() {
         neurologicalState: NeurologicalState.sedado,
       ),
     );
-    expect(female, contains('MODELO 2 — ACORDADA FEMININA'));
-    expect(sedated, contains('MODELO 3 — SEDADO/VM'));
+    expect(female, contains('SEXO: F'));
+    expect(female, contains('ESTADO: ACORDADA'));
+    expect(sedated, contains('SEXO: M'));
+    expect(sedated, contains('ESTADO: SEDADO'));
+    expect(female, isNot(contains('MODELO')));
+    expect(sedated, isNot(contains('MODELO')));
   });
 
   test('usa modelo de exame fisico quando todo o bloco esta vazio', () {
@@ -310,7 +327,7 @@ void main() {
     expect(text, contains('VASOPRESSINA 0,03 U/MIN'));
   });
 
-  test('resumo inclui campos novos de coleta', () {
+  test('resumo compacto preserva os campos clinicos coletados', () {
     final summary = generator.generateSummary(const EvolutionData(
       sex: Sex.masculino,
       neurologicalState: NeurologicalState.sedado,
@@ -333,13 +350,69 @@ void main() {
       upperLimbsExam: 'SEM EDEMA',
     ));
 
-    expect(summary, contains('PAM COLETADA: 72 MMHG'));
-    expect(summary, contains('PESO COLETADO PARA CÁLCULO DE DIURESE: 70 KG'));
-    expect(summary, contains('RASS COLETADO: -4'));
-    expect(summary, contains('SINCRONIA COM VENTILADOR COLETADA: SINCRÔNICO'));
-    expect(summary,
-        contains('EDEMA/ALTERAÇÕES EM MMII COLETADOS: COM EDEMA ++/4+ EM MID'));
-    expect(summary,
-        contains('HÁ DADOS SUFICIENTES PARA CALCULAR ML/KG/H DA DIURESE'));
+    expect(summary, contains('PAM PONTUAL: 72 MMHG'));
+    expect(summary, contains('PESO: 70 KG'));
+    expect(summary, contains('NEURO: RASS -4'));
+    expect(
+        summary,
+        contains('RESP: IOT+VM; MODO PCV; FR 20; PC 15 CMH2O; '
+            'FIO2 40%; PEEP 7 CMH2O; SPO2 89%; SINCRÔNICO'));
+    expect(summary, contains('MMII: COM EDEMA ++/4+ EM MID'));
+    expect(summary, contains('MMSS: SEM EDEMA'));
+    expect(summary, contains('DIURESE: SVD; 500 ML'));
+    expect(summary, contains('PERÍODO AVALIADO: 18H'));
+  });
+
+  test('resumo compacto representa o caso clinico completo', () {
+    final summary = generator.generateSummary(
+      const EvolutionData(
+        sex: Sex.feminino,
+        neurologicalState: NeurologicalState.acordado,
+        weight: '65',
+        ventilatorySupport: VentilatorySupport.arAmbiente,
+        oxygenSaturation: '97',
+        hemodynamicState: HemodynamicState.estavel,
+        vasoactiveSupport: VasoactiveSupport.semDva,
+        bloodPressureState: BloodPressureState.tendendoHipotensao,
+        bloodPressure: '120/80',
+        heartRate: '77',
+        temperatureState: TemperatureState.afebril,
+        measuredTemperature: '36,6',
+        dietRoute: DietRoute.vo,
+        vomiting: true,
+        gastrointestinalNotes:
+            'LEVE DESCONFORTO ABDOMINAL RESPONSIVO À ANALGESIA',
+        hgtMinimum: '66',
+        hgtMaximum: '73',
+        diuresisType: DiuresisType.espontanea,
+        diuresisPeriod: '18H',
+        bowelMovement: BowelMovement.ausentes,
+        daysSinceLastBowelMovement: '5',
+        generalCondition: 'BEG; CORADA; HIDRATADA; ACIANÓTICA; ANICTÉRICA',
+        pulmonaryExam: 'NORMAL',
+        cardiovascularExam:
+            'BCRNF SS 2T; TEC<3S; PULSOS PALPÁVEIS; EXTREMIDADES AQUECIDAS',
+        abdominalExam: 'PLANO; FLÁCIDO; RH+; INDOLOR; SEM PERITONITE',
+        lowerLimbsExam: 'NORMAL',
+        upperLimbsExam: 'SEM EDEMA',
+        neurologicalExam: 'NORMAL',
+      ),
+      bedLabel: 'UTI A - LEITO 1',
+    );
+
+    expect(summary, contains('IDENTIFICAÇÃO DO LEITO: UTI A - LEITO 1'));
+    expect(summary, contains('RESP: AR AMBIENTE; SPO2 97%'));
+    expect(summary, contains('HEMO: ESTÁVEL; SEM DVA; TENDENDO À HIPOTENSÃO'));
+    expect(summary, contains('PA PONTUAL: 120/80 MMHG'));
+    expect(summary, contains('TEMP: AFEBRIL; 36,6 °C'));
+    expect(
+        summary,
+        contains('GI: VÔMITOS; LEVE DESCONFORTO ABDOMINAL '
+            'RESPONSIVO À ANALGESIA'));
+    expect(summary, contains('HGT: 66 - 73 MG/DL'));
+    expect(summary, contains('DIURESE: ESPONTÂNEA; NÃO QUANTIFICADA'));
+    expect(summary, contains('PERÍODO AVALIADO: 18H'));
+    expect(summary, contains('EVACUAÇÃO: AUSENTE; HÁ 5 DIAS'));
+    expect(summary, contains('NEURO: NORMAL'));
   });
 }

@@ -117,6 +117,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       'homeOxygenFlow',
       'hgtMin',
       'hgtMax',
+      'giNotes',
       'bic',
       'fr',
       'vt',
@@ -130,6 +131,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       'rass',
       'neuroDeficit',
       'stoolDescription',
+      'bowelDays',
       'notes',
     ])
       name: TextEditingController(),
@@ -432,6 +434,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                       onSelected: (v) => _update(() => _stasis = v),
                     ),
                   ]),
+                  _text('giNotes', 'Observações gastrointestinais',
+                      hint: 'Ex.: desconforto abdominal leve...'),
                 ]),
                 FormSection(title: 'Diurese, BH e evacuação', children: [
                   _chips<String>(
@@ -471,6 +475,9 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
                     },
                     onChanged: (v) => _update(() => _bowel = v),
                   ),
+                  if (_bowel == BowelMovement.ausentes)
+                    _text('bowelDays', 'Dias sem evacuar',
+                        hint: '5', number: true),
                   _chips<StoolPathologicalProducts>(
                     title: 'Produtos patológicos',
                     values: StoolPathologicalProducts.values,
@@ -1484,6 +1491,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         nausea: _nausea,
         vomiting: _vomiting,
         gastricStasis: _stasis,
+        gastrointestinalNotes: _value('giNotes'),
         hgtMinimum: _value('hgtMin'),
         hgtMaximum: _value('hgtMax'),
         diuresisType: _diuresis,
@@ -1500,6 +1508,8 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
         fluidBalance: _value('balance'),
         fluidBalancePeriod: _value('balance') == null ? null : _period,
         bowelMovement: _bowel,
+        daysSinceLastBowelMovement:
+            _bowel == BowelMovement.ausentes ? _value('bowelDays') : null,
         stoolPathologicalProducts: _stoolProducts,
         stoolPathologicalDescription:
             _stoolProducts == StoolPathologicalProducts.presentes
@@ -1595,6 +1605,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       'homeOxygenFlow': data.homeOxygenFlow,
       'hgtMin': data.hgtMinimum,
       'hgtMax': data.hgtMaximum,
+      'giNotes': data.gastrointestinalNotes,
       'bic': data.continuousInfusions,
       'fr': data.respiratoryRate,
       'vt': data.tidalVolume,
@@ -1608,6 +1619,7 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
       'rass': data.rass,
       'neuroDeficit': data.formState['neuroDeficit'] as String?,
       'stoolDescription': data.stoolPathologicalDescription,
+      'bowelDays': data.daysSinceLastBowelMovement,
       'notes': data.notes,
     };
     for (final entry in values.entries) {

@@ -69,6 +69,7 @@ class EvolutionData {
     this.nausea = false,
     this.vomiting = false,
     this.gastricStasis = false,
+    this.gastrointestinalNotes,
     this.hgtMinimum,
     this.hgtMaximum,
     this.diuresisType,
@@ -78,6 +79,7 @@ class EvolutionData {
     this.fluidBalance,
     this.fluidBalancePeriod,
     this.bowelMovement,
+    this.daysSinceLastBowelMovement,
     this.stoolPathologicalProducts,
     this.stoolPathologicalDescription,
     this.generalCondition,
@@ -158,6 +160,8 @@ class EvolutionData {
         gastricStasis: (json['gastrointestinalSymptoms']
                 as Map<String, dynamic>?)?['gastricStasis'] as bool? ??
             false,
+        gastrointestinalNotes: (json['gastrointestinalSymptoms']
+            as Map<String, dynamic>?)?['notes'] as String?,
         hgtMinimum: json['hgtMinimum'] as String?,
         hgtMaximum: json['hgtMaximum'] as String?,
         diuresisType: _enumValue(DiuresisType.values,
@@ -171,6 +175,8 @@ class EvolutionData {
         fluidBalance: json['fluidBalance'] as String?,
         fluidBalancePeriod: json['fluidBalancePeriod'] as String?,
         bowelMovement: _enumValue(BowelMovement.values, json['bowelMovement']),
+        daysSinceLastBowelMovement:
+            json['daysSinceLastBowelMovement'] as String?,
         stoolPathologicalProducts: _enumValue(StoolPathologicalProducts.values,
             json['stoolPathologicalProducts']),
         stoolPathologicalDescription:
@@ -234,6 +240,7 @@ class EvolutionData {
   final bool nausea;
   final bool vomiting;
   final bool gastricStasis;
+  final String? gastrointestinalNotes;
   final String? hgtMinimum;
   final String? hgtMaximum;
   final DiuresisType? diuresisType;
@@ -243,6 +250,7 @@ class EvolutionData {
   final String? fluidBalance;
   final String? fluidBalancePeriod;
   final BowelMovement? bowelMovement;
+  final String? daysSinceLastBowelMovement;
   final StoolPathologicalProducts? stoolPathologicalProducts;
   final String? stoolPathologicalDescription;
   final String? generalCondition;
@@ -299,6 +307,7 @@ class EvolutionData {
           'nausea': nausea,
           'vomiting': vomiting,
           'gastricStasis': gastricStasis,
+          'notes': gastrointestinalNotes,
         },
         'hgtMinimum': hgtMinimum,
         'hgtMaximum': hgtMaximum,
@@ -311,6 +320,7 @@ class EvolutionData {
         'fluidBalance': fluidBalance,
         'fluidBalancePeriod': fluidBalancePeriod,
         'bowelMovement': bowelMovement?.name,
+        'daysSinceLastBowelMovement': daysSinceLastBowelMovement,
         'stoolPathologicalProducts': stoolPathologicalProducts?.name,
         'stoolPathologicalDescription': stoolPathologicalDescription,
         'physicalExam': {
