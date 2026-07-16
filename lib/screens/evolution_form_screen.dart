@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import '../app_theme.dart';
 import '../models/bed.dart';
 import '../models/evolution_data.dart';
 import '../models/evolution_form_preset.dart';
@@ -911,9 +912,9 @@ class _EvolutionFormScreenState extends State<EvolutionFormScreen> {
   Widget _temperatureDot() {
     final state = _temperatureFromInput();
     final color = switch (state) {
-      TemperatureState.febril => Colors.red,
-      TemperatureState.subfebril => Colors.orange,
-      TemperatureState.afebril => Colors.green,
+      TemperatureState.febril => context.clinical.danger,
+      TemperatureState.subfebril => context.clinical.warning,
+      TemperatureState.afebril => context.clinical.success,
       null => Theme.of(context).colorScheme.outlineVariant,
     };
     return Container(
