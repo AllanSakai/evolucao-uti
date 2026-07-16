@@ -188,6 +188,10 @@ ThemeData buildAppTheme(Brightness brightness) {
         borderRadius: BorderRadius.circular(_cardRadius),
         side: BorderSide(color: isDark ? _darkBorder : _lightCardBorder),
       ),
+      // Sem isso, decoracoes internas com cantos retos (ex.: a barra lateral
+      // de status nos cards de leito) vazam para fora dos cantos
+      // arredondados do card.
+      clipBehavior: Clip.antiAlias,
     ),
     dividerTheme: DividerThemeData(
       color: scheme.outlineVariant,

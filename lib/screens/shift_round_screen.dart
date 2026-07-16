@@ -155,14 +155,31 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
   Widget _bedCard(SelectedBed selected) {
     final status = _status(selected.status);
     final checklist = _analysis.checklist(selected.evolutionData);
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final statusColor = _statusColor(selected.status, colorScheme);
+    final isCompleted = selected.status == BedProgressStatus.completed;
     return Card(
       margin: EdgeInsets.zero,
+      color: isCompleted
+          ? Color.lerp(colorScheme.surface, statusColor, isDark ? 0.16 : 0.07)
+          : null,
+      shape: isCompleted
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: statusColor.withValues(alpha: .5),
+                width: 1.4,
+              ),
+            )
+          : null,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: statusColor, width: 4)),
+          border: Border(
+            left: BorderSide(color: statusColor, width: isCompleted ? 5 : 4),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,6 +210,14 @@ class _ShiftRoundScreenState extends State<ShiftRoundScreen> {
                 Chip(
                   avatar: Icon(status.icon, size: 16, color: statusColor),
                   label: Text(status.label),
+                  labelStyle: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  backgroundColor: statusColor.withValues(
+                    alpha: isDark ? .2 : .12,
+                  ),
+                  side: BorderSide(color: statusColor.withValues(alpha: .45)),
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                 ),
