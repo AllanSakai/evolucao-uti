@@ -1,8 +1,11 @@
 # Publicar o AuxiliarUTI na Vercel
 
-O Flutter Web e compilado e publicado pela integracao direta entre a Vercel e o
-GitHub. Pushes na branch `main` atualizam producao; pull requests recebem um
-deploy de preview.
+O Flutter Web e compilado pelo GitHub Actions e publicado na Vercel. Pushes na
+branch `main` atualizam producao; pull requests recebem um deploy de preview.
+
+A compilacao automatica da integracao nativa da Vercel fica desativada em
+`vercel.json`, evitando dois deploys para o mesmo commit. O GitHub Actions e o
+responsavel por instalar o Flutter, testar, compilar e enviar o resultado.
 
 ## 1. Vincular o projeto a Vercel
 
@@ -38,13 +41,31 @@ Supabase separado para previews.
 Depois de alterar variaveis, e necessario fazer um novo deploy, pois o Flutter
 as incorpora no JavaScript durante a compilacao.
 
-## 3. Publicar
+## 3. Configurar os secrets do GitHub Actions
 
-Ao abrir ou atualizar um pull request, a integracao da Vercel cria uma preview.
-Depois do merge na `main`, a mesma integracao cria o deploy de producao. O
-comando de build e o diretorio publicado estao definidos em `vercel.json`.
+No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme:
 
-## 4. Automatizar migrations do Supabase
+```text
+SUPABASE_URL
+SUPABASE_ANON_KEY
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
+```
+
+Opcionalmente, cadastre `ADMIN_EMAIL`. O `VERCEL_TOKEN` deve ser exclusivo para
+a automacao e nunca deve ser adicionado ao repositorio. Os identificadores da
+organizacao e do projeto ficam em `.vercel/project.json`, que tambem permanece
+fora do Git.
+
+## 4. Publicar
+
+Ao abrir ou atualizar um pull request, o workflow
+`.github/workflows/deploy-vercel.yml` cria uma preview. Depois do merge na
+`main`, o mesmo workflow cria o deploy de producao. O comando de build e o
+diretorio publicado estao definidos em `vercel.json`.
+
+## 5. Automatizar migrations do Supabase
 
 No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme os
 secrets:
@@ -69,7 +90,7 @@ SQL Editor ou Table Editor. Crie cada alteracao com:
 supabase migration new descricao_da_alteracao
 ```
 
-## 5. Configurar o Supabase Auth
+## 6. Configurar o Supabase Auth
 
 Depois que a Vercel fornecer o dominio de producao, abra no Supabase
 `Authentication` > `URL Configuration`:
@@ -91,7 +112,7 @@ https://*-pixel-apps.vercel.app/**
 
 Use sempre a URL exata em producao; o curinga deve ficar restrito aos previews.
 
-## 6. Desativar o GitHub Pages
+## 7. Desativar o GitHub Pages
 
 O workflow antigo foi removido. Se o Pages ainda estiver ativo no repositorio,
 abra `Settings` > `Pages` e desative a publicacao depois de confirmar o deploy
