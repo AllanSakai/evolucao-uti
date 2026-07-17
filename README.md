@@ -119,3 +119,10 @@ flutter test
 O Flutter Web e publicado na Vercel pelo GitHub Actions. Consulte
 [`DEPLOY.md`](DEPLOY.md) para vincular o projeto, configurar as variaveis do
 Supabase e habilitar os deploys de producao e preview.
+
+### Fluxo visual pelo GitHub Desktop
+
+Para alteracoes futuras: atualize a `main`, crie uma branch, revise e selecione
+somente os arquivos desejados, faca o commit e use `Push origin`. Abra um Pull
+Request rascunho e aguarde a verificacao verde; a preview da Vercel sera criada
+automaticamente pelo GitHub Actions.
