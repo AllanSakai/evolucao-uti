@@ -1,11 +1,16 @@
 # Publicar o AuxiliarUTI na Vercel
 
-O Flutter Web e compilado pelo GitHub Actions e publicado na Vercel. Pushes na
-branch `main` atualizam producao; pull requests recebem um deploy de preview.
+O Flutter Web e compilado e publicado pela integracao direta entre a Vercel e o
+GitHub. Pushes na branch `main` atualizam producao; pull requests recebem um
+deploy de preview.
 
 ## 1. Vincular o projeto a Vercel
 
-Na raiz do repositorio, com a Vercel CLI autenticada:
+No painel da Vercel, importe o repositorio `AllanSakai/evolucao-uti` e confirme
+que a branch de producao e `main`.
+
+Para vincular tambem a pasta local, use na raiz do repositorio, com a Vercel CLI
+autenticada:
 
 ```powershell
 vercel link
@@ -14,42 +19,32 @@ vercel link
 Crie ou selecione o projeto `evolucao-uti`. O arquivo local
 `.vercel/project.json` sera criado, mas nao deve ser enviado ao Git.
 
-## 2. Conferir as variaveis da aplicacao no GitHub
+## 2. Configurar as variaveis da aplicacao na Vercel
 
-No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme:
+No projeto da Vercel, abra `Settings` > `Environment Variables` e cadastre:
 
 ```text
 SUPABASE_URL
 SUPABASE_ANON_KEY
 ```
 
-Opcionalmente, cadastre `ADMIN_EMAIL`. Se omitida, a compilacao usa
-`allansakai@gmail.com`.
+Marque `Production` e `Preview` para cada variavel. Opcionalmente, cadastre
+`ADMIN_EMAIL`; se omitida, a compilacao usa `allansakai@gmail.com`.
+
+Enquanto producao e preview usarem o mesmo projeto Supabase, nao use dados reais
+para testar um pull request. O ideal e configurar futuramente um projeto
+Supabase separado para previews.
 
 Depois de alterar variaveis, e necessario fazer um novo deploy, pois o Flutter
 as incorpora no JavaScript durante a compilacao.
 
-## 3. Configurar os secrets do GitHub Actions
+## 3. Publicar
 
-Copie `orgId` e `projectId` de `.vercel/project.json`. Na mesma pagina de
-secrets do GitHub, crie:
+Ao abrir ou atualizar um pull request, a integracao da Vercel cria uma preview.
+Depois do merge na `main`, a mesma integracao cria o deploy de producao. O
+comando de build e o diretorio publicado estao definidos em `vercel.json`.
 
-```text
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
-```
-
-O token deve ser criado em `Vercel` > `Account Settings` > `Tokens`. Nunca
-adicione o token ou o arquivo `.vercel/project.json` ao repositorio.
-
-## 4. Publicar
-
-Envie as alteracoes para `main`. O workflow
-`.github/workflows/deploy-vercel.yml` executa analise, testes, build e deploy de
-producao. Pull requests usam o mesmo fluxo com destino de preview.
-
-## 5. Automatizar migrations do Supabase
+## 4. Automatizar migrations do Supabase
 
 No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme os
 secrets:
@@ -74,7 +69,7 @@ SQL Editor ou Table Editor. Crie cada alteracao com:
 supabase migration new descricao_da_alteracao
 ```
 
-## 6. Configurar o Supabase Auth
+## 5. Configurar o Supabase Auth
 
 Depois que a Vercel fornecer o dominio de producao, abra no Supabase
 `Authentication` > `URL Configuration`:
@@ -96,7 +91,7 @@ https://*-pixel-apps.vercel.app/**
 
 Use sempre a URL exata em producao; o curinga deve ficar restrito aos previews.
 
-## 7. Desativar o GitHub Pages
+## 6. Desativar o GitHub Pages
 
 O workflow antigo foi removido. Se o Pages ainda estiver ativo no repositorio,
 abra `Settings` > `Pages` e desative a publicacao depois de confirmar o deploy
