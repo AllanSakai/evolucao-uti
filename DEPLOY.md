@@ -1,98 +1,126 @@
-# Publicar o EvoluçãoUTI
+# Publicar o AuxiliarUTI na Vercel
 
-Este projeto está preparado para publicar o Flutter Web no GitHub Pages e sincronizar os dados pelo Supabase.
+O Flutter Web e compilado pelo GitHub Actions e publicado na Vercel. Pushes na
+branch `main` atualizam producao; pull requests recebem um deploy de preview.
 
-## 1. Criar o repositório no GitHub
+A compilacao automatica da integracao nativa da Vercel fica desativada em
+`vercel.json`, evitando dois deploys para o mesmo commit. O GitHub Actions e o
+responsavel por instalar o Flutter, testar, compilar e enviar o resultado.
 
-1. Acesse https://github.com/new
-2. Nome sugerido: `evolucao-uti`
-3. Pode ser privado ou público.
-4. Não marque para criar README, `.gitignore` ou license, porque o projeto já tem esses arquivos.
-5. Crie o repositório.
+## 1. Vincular o projeto a Vercel
 
-## 2. Enviar o projeto
+No painel da Vercel, importe o repositorio `AllanSakai/evolucao-uti` e confirme
+que a branch de producao e `main`.
 
-No PowerShell, dentro da pasta do projeto:
+Para vincular tambem a pasta local, use na raiz do repositorio, com a Vercel CLI
+autenticada:
 
 ```powershell
-git remote add origin https://github.com/SEU_USUARIO/evolucao-uti.git
-git branch -M main
-git push -u origin main
+vercel link
 ```
 
-## 3. Configurar secrets do Supabase no GitHub
+Crie ou selecione o projeto `evolucao-uti`. O arquivo local
+`.vercel/project.json` sera criado, mas nao deve ser enviado ao Git.
 
-No repositório GitHub:
+## 2. Configurar as variaveis da aplicacao na Vercel
 
-1. Settings
-2. Secrets and variables
-3. Actions
-4. New repository secret
-
-Crie duas secrets:
+No projeto da Vercel, abra `Settings` > `Environment Variables` e cadastre:
 
 ```text
 SUPABASE_URL
 SUPABASE_ANON_KEY
 ```
 
-Use os valores do Supabase:
+Marque `Production` e `Preview` para cada variavel. Opcionalmente, cadastre
+`ADMIN_EMAIL`; se omitida, a compilacao usa `allansakai@gmail.com`.
 
-- Project URL
-- anon/public key
+Enquanto producao e preview usarem o mesmo projeto Supabase, nao use dados reais
+para testar um pull request. O ideal e configurar futuramente um projeto
+Supabase separado para previews.
 
-## 4. Criar o usuario administrador
+Depois de alterar variaveis, e necessario fazer um novo deploy, pois o Flutter
+as incorpora no JavaScript durante a compilacao.
 
-No Supabase, abra `Authentication` > `Users` e confirme que o usuario
-`allansakai@gmail.com` esta cadastrado e com o e-mail confirmado. Esse usuario
-entra no site usando o nome `admin` e tem acesso completo para adicionar, editar
-e remover dados.
+## 3. Configurar os secrets do GitHub Actions
 
-## 5. Ativar GitHub Pages
-
-No repositório GitHub:
-
-1. Settings
-2. Pages
-3. Em Source, escolha `GitHub Actions`
-4. Salve.
-
-Depois do primeiro push, o workflow `.github/workflows/deploy-pages.yml` vai compilar e publicar o site.
-
-## 6. Configurar URLs no Supabase Auth
-
-No Supabase:
-
-1. Authentication
-2. URL Configuration
-3. Site URL: a URL publicada no GitHub Pages, por exemplo:
+No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme:
 
 ```text
-https://SEU_USUARIO.github.io/evolucao-uti/
+SUPABASE_URL
+SUPABASE_ANON_KEY
+VERCEL_TOKEN
+VERCEL_ORG_ID
+VERCEL_PROJECT_ID
 ```
 
-4. Em Redirect URLs, adicione também:
+Opcionalmente, cadastre `ADMIN_EMAIL`. O `VERCEL_TOKEN` deve ser exclusivo para
+a automacao e nunca deve ser adicionado ao repositorio. Os identificadores da
+organizacao e do projeto ficam em `.vercel/project.json`, que tambem permanece
+fora do Git.
+
+## 4. Publicar
+
+Ao abrir ou atualizar um pull request, o workflow
+`.github/workflows/deploy-vercel.yml` cria uma preview. Depois do merge na
+`main`, o mesmo workflow cria o deploy de producao. O comando de build e o
+diretorio publicado estao definidos em `vercel.json`.
+
+## 5. Automatizar migrations do Supabase
+
+No GitHub, abra `Settings` > `Secrets and variables` > `Actions` e confirme os
+secrets:
+
+```text
+SUPABASE_ACCESS_TOKEN
+SUPABASE_PROJECT_ID
+```
+
+O workflow `.github/workflows/deploy-supabase-migrations.yml` e executado quando
+uma migration entra na branch `main`. Primeiro ele mostra as migrations
+pendentes com `supabase db push --dry-run` e, se a verificacao funcionar, aplica
+somente as migrations ainda nao registradas no banco.
+
+O workflow usa concorrencia exclusiva e nao cancela uma execucao em andamento,
+evitando duas publicacoes simultaneas no mesmo banco.
+
+Depois de adotar esse fluxo, nao altere o schema de producao diretamente pelo
+SQL Editor ou Table Editor. Crie cada alteracao com:
+
+```bash
+supabase migration new descricao_da_alteracao
+```
+
+## 6. Configurar o Supabase Auth
+
+Depois que a Vercel fornecer o dominio de producao, abra no Supabase
+`Authentication` > `URL Configuration`:
+
+1. Defina `Site URL` como `https://SEU-PROJETO.vercel.app`.
+2. Adicione a mesma URL em `Redirect URLs`.
+3. Para previews da equipe atual, adicione
+   `https://*-pixel-apps.vercel.app/**` em `Redirect URLs`.
+4. Mantenha tambem as URLs locais usadas durante o desenvolvimento.
+
+Exemplo:
 
 ```text
 http://127.0.0.1:53123/
 http://localhost:53123/
-https://SEU_USUARIO.github.io/evolucao-uti/
+https://SEU-PROJETO.vercel.app/
+https://*-pixel-apps.vercel.app/**
 ```
 
-Se o link de confirmação de e-mail abrir uma página 404 do GitHub, confira se o
-`Site URL` e o Redirect URL principal estão exatamente com o caminho do projeto:
+Use sempre a URL exata em producao; o curinga deve ficar restrito aos previews.
 
-```text
-https://SEU_USUARIO.github.io/evolucao-uti/
-```
+## 7. Desativar o GitHub Pages
 
-O `/evolucao-uti/` no final é obrigatório para GitHub Pages de repositório.
+O workflow antigo foi removido. Se o Pages ainda estiver ativo no repositorio,
+abra `Settings` > `Pages` e desative a publicacao depois de confirmar o deploy
+na Vercel.
 
-## 7. Usar no celular
+## Uso no celular
 
-Abra a URL do GitHub Pages no Safari/Chrome do celular, entre na sua conta e use normalmente.
+Abra a URL da Vercel no Safari ou Chrome. Para instalar como atalho:
 
-Se quiser instalar como atalho:
-
-- iPhone/Safari: compartilhar -> Adicionar à Tela de Início
-- Android/Chrome: menu -> Adicionar à tela inicial
+- iPhone/Safari: Compartilhar > Adicionar a Tela de Inicio.
+- Android/Chrome: menu > Adicionar a tela inicial.

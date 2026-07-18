@@ -62,12 +62,21 @@ permanece bloqueado.
 4. Escolha uma senha forte para o banco.
 5. Aguarde o projeto terminar de criar.
 
-### 2. Criar tabela
+### 2. Criar ou alterar tabelas
 
-1. No menu lateral do Supabase, abra SQL Editor.
-2. Clique em New query.
-3. Cole o conteudo de `supabase/schema.sql`.
-4. Clique em Run.
+O banco e atualizado pelos arquivos em `supabase/migrations`. Depois que uma
+migration entra na branch `main`, o GitHub Actions a aplica automaticamente no
+Supabase.
+
+Nao altere o banco de producao diretamente pelo SQL Editor ou Table Editor.
+Para uma nova alteracao, crie primeiro uma migration com:
+
+```bash
+supabase migration new descricao_da_alteracao
+```
+
+O arquivo `supabase/schema.sql` e mantido apenas como referencia consolidada do
+schema atual.
 
 ### 3. Pegar as chaves
 
@@ -104,3 +113,16 @@ identifique o paciente. Use apenas UTI/leito e dados clinicos sem identificacao.
 ```bash
 flutter test
 ```
+
+## Publicacao
+
+O Flutter Web e publicado na Vercel pelo GitHub Actions. Consulte
+[`DEPLOY.md`](DEPLOY.md) para vincular o projeto, configurar as variaveis do
+Supabase e habilitar os deploys de producao e preview.
+
+### Fluxo visual pelo GitHub Desktop
+
+Para alteracoes futuras: atualize a `main`, crie uma branch, revise e selecione
+somente os arquivos desejados, faca o commit e use `Push origin`. Abra um Pull
+Request rascunho e aguarde a verificacao verde; a preview da Vercel sera criada
+automaticamente pelo GitHub Actions.
